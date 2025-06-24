@@ -1,0 +1,7 @@
+// Configuration pour gérer les avertissements de compilation
+OTHER_CFLAGS = $(inherited) -Wno-error=implicit-function-declaration -Wno-error=unsupported-option
+OTHER_LDFLAGS = $(inherited) -Wl,-no_compact_unwind
+MACOSX_DEPLOYMENT_TARGET = 15.4
+ENABLE_BITCODE = NO
+SWIFT_VERSION = 5.0
+GCC_OPTIMIZATION_LEVEL = 0 
