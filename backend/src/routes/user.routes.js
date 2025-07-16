@@ -7,7 +7,7 @@ const verifyToken = require('../middleware/auth.middleware');
 router.get('/profile', verifyToken, async (req, res) => {
   try {
     const [users] = await db.query(
-      'SELECT id, name, email, profile_type, created_at FROM users WHERE id = ?',
+      'SELECT id, name, email, profile_type, profile_image_url, created_at FROM users WHERE id = ?',
       [req.user.id]
     );
 
@@ -52,23 +52,30 @@ router.put('/profile', verifyToken, async (req, res) => {
   }
 });
 
-// Obtenir la liste des utilisateurs (pour les administrateurs)
+// Obtenir la liste des utilisateurs (pour la messagerie)
 router.get('/', verifyToken, async (req, res) => {
   try {
+    const currentUserId = req.user.id;
+    
     const [users] = await db.query(
-      'SELECT id, name, email, profile_type, created_at FROM users'
+      `SELECT id, first_name, last_name, email, profile_type, profile_image_url 
+       FROM users 
+       WHERE id != ? 
+       ORDER BY first_name, last_name`,
+      [currentUserId]
     );
+    
     res.json(users);
   } catch (error) {
     console.error('Erreur lors de la récupération des utilisateurs:', error);
-    res.status(500).json({ message: 'Erreur serveur' });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
 // Recherche d'utilisateurs par type et/ou nom
 router.get('/search', verifyToken, async (req, res) => {
   const { type, query } = req.query;
-  let sql = 'SELECT id, name, email, profile_type, created_at FROM users WHERE 1=1';
+  let sql = 'SELECT id, name, email, profile_type, profile_image_url, created_at FROM users WHERE 1=1';
   const params = [];
 
   if (type) {

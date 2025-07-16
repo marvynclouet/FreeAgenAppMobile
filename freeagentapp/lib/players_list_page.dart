@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'services/profile_service.dart';
+import 'widgets/user_avatar.dart';
 
 class PlayersListPage extends StatelessWidget {
   const PlayersListPage({Key? key}) : super(key: key);
@@ -26,7 +27,13 @@ class PlayersListPage extends StatelessWidget {
             itemBuilder: (context, index) {
               final player = players[index];
               return ListTile(
-                leading: const Icon(Icons.person),
+                leading: UserAvatar(
+                  name: player['name'],
+                  imageUrl: player['profile_image_url'],
+                  hasCustomImage: player['profile_image_url'] != null,
+                  radius: 24,
+                  profileType: 'player',
+                ),
                 title: Text(player['name'] ?? ''),
                 subtitle: Text(player['email'] ?? ''),
               );

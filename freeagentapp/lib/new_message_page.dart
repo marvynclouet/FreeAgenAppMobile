@@ -1,317 +1,399 @@
 import 'package:flutter/material.dart';
-import 'messages_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'services/message_service.dart';
+import 'services/profile_service.dart';
+import 'widgets/user_avatar.dart';
 
 class NewMessagePage extends StatefulWidget {
-  const NewMessagePage({super.key});
+  final int? opportunityId;
+  final String? opportunityTitle;
+  final int? receiverId;
+  final String? receiverName;
+
+  const NewMessagePage({
+    Key? key,
+    this.opportunityId,
+    this.opportunityTitle,
+    this.receiverId,
+    this.receiverName,
+  }) : super(key: key);
 
   @override
   State<NewMessagePage> createState() => _NewMessagePageState();
 }
 
 class _NewMessagePageState extends State<NewMessagePage> {
+  final MessageService _messageService = MessageService();
+  final ProfileService _profileService = ProfileService();
+  final TextEditingController _messageController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
-  String? _selectedProfileType;
-  List<Map<String, dynamic>> _searchResults = [];
-  bool _isSearching = false;
 
-  final List<Map<String, dynamic>> _profileTypes = [
-    {
-      'type': 'player',
-      'label': 'Joueur',
-      'icon': Icons.sports_soccer,
-    },
-    {
-      'type': 'coach',
-      'label': 'Coach',
-      'icon': Icons.sports,
-    },
-    {
-      'type': 'lawyer',
-      'label': 'Avocat',
-      'icon': Icons.gavel,
-    },
-    {
-      'type': 'team',
-      'label': 'Équipe',
-      'icon': Icons.groups,
-    },
-  ];
+  List<Map<String, dynamic>> _users = [];
+  List<Map<String, dynamic>> _filteredUsers = [];
+  Map<String, dynamic>? _selectedUser;
+  bool _isLoading = false;
+  bool _isSending = false;
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(_onSearchChanged);
-  }
-
-  @override
-  void dispose() {
-    _searchController.removeListener(_onSearchChanged);
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _onSearchChanged() {
-    if (_searchController.text.length >= 2) {
-      _searchUsers();
+    if (widget.receiverId != null && widget.receiverName != null) {
+      _selectedUser = {
+        'id': widget.receiverId,
+        'first_name': widget.receiverName?.split(' ').first ?? '',
+        'last_name': widget.receiverName?.split(' ').skip(1).join(' ') ?? '',
+      };
     } else {
-      setState(() {
-        _searchResults = [];
-      });
+      _loadUsers();
     }
   }
 
-  Future<void> _searchUsers() async {
-    setState(() {
-      _isSearching = true;
-    });
+  Future<void> _loadUsers() async {
+    setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
-      final query = _searchController.text.trim();
-      String url = 'http://192.168.1.43:3000/api/users/search?query=$query';
-      if (_selectedProfileType != null) {
-        url += '&type=$_selectedProfileType';
-      }
-      final uri = Uri.parse(url);
-      final response = await http.get(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-      if (response.statusCode == 200) {
-        final List users = json.decode(response.body);
-        setState(() {
-          _searchResults = users
-              .map<Map<String, dynamic>>((user) => {
-                    'id': user['id'],
-                    'name': user['name'],
-                    'type': user['profile_type'],
-                    'team': '', // À adapter si tu veux afficher l'équipe
-                    'imageUrl':
-                        'https://via.placeholder.com/50', // À adapter si tu as une vraie image
-                  })
-              .toList();
-          _isSearching = false;
-        });
+      final users = await _profileService.getUsers();
+      setState(() {
+        _users = users;
+        _filteredUsers = users;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Erreur lors du chargement des utilisateurs: $e');
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _filterUsers(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredUsers = _users;
       } else {
-        setState(() {
-          _searchResults = [];
-          _isSearching = false;
-        });
+        _filteredUsers = _users.where((user) {
+          final name =
+              '${user['first_name']} ${user['last_name']}'.toLowerCase();
+          return name.contains(query.toLowerCase());
+        }).toList();
+      }
+    });
+  }
+
+  Future<void> _sendMessage() async {
+    if (_selectedUser == null || _messageController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Veuillez sélectionner un destinataire et saisir un message'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSending = true);
+    try {
+      final result = await _messageService.createConversation(
+        receiverId: _selectedUser!['id'],
+        content: _messageController.text.trim(),
+        opportunityId: widget.opportunityId,
+        subject: widget.opportunityTitle,
+      );
+
+      if (result != null && result['success'] == true) {
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Message envoyé avec succès'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        throw Exception('Échec de l\'envoi du message');
       }
     } catch (e) {
-      setState(() {
-        _searchResults = [];
-        _isSearching = false;
-      });
+      print('Erreur lors de l\'envoi du message: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Erreur lors de l\'envoi du message'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() => _isSending = false);
     }
   }
-
-  Color get _backgroundColor => const Color(0xFF111014);
-  Color get _cardColor => const Color(0xFF1A1822);
-  Color get _accentViolet => const Color(0xFF7C3AED);
-  Color get _textColor => Colors.white;
-  Color get _subtitleColor => Colors.white70;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: const Color(0xFF111014),
       appBar: AppBar(
-        title: const Text('Nouveau message'),
-        backgroundColor: _backgroundColor,
-        foregroundColor: _textColor,
+        backgroundColor: const Color(0xFF111014),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          widget.opportunityId != null ? 'Postuler' : 'Nouveau message',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         elevation: 0,
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding:
-                const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Type de profil',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+        actions: [
+          TextButton(
+            onPressed: _isSending ? null : _sendMessage,
+            child: _isSending
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.orange,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'Envoyer',
+                    style: TextStyle(
+                      color: Colors.orange,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 60,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _profileTypes.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
-                    itemBuilder: (context, index) {
-                      final type = _profileTypes[index];
-                      final isSelected = _selectedProfileType == type['type'];
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            if (isSelected) {
-                              _selectedProfileType = null; // Désélectionner
-                            } else {
-                              _selectedProfileType = type['type'];
-                            }
-                            _searchResults = [];
-                          });
-                          if (_searchController.text.length >= 2) {
-                            _searchUsers();
-                          }
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isSelected ? _accentViolet : _cardColor,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                type['icon'],
-                                color:
-                                    isSelected ? Colors.white : _accentViolet,
-                                size: 22,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                type['label'],
-                                style: TextStyle(
-                                  color: isSelected ? Colors.white : _textColor,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: TextField(
-              controller: _searchController,
-              style: TextStyle(color: _textColor),
-              decoration: InputDecoration(
-                hintText: 'Rechercher un utilisateur...',
-                hintStyle: TextStyle(color: _subtitleColor),
-                prefixIcon: Icon(Icons.search, color: _accentViolet),
-                filled: true,
-                fillColor: _cardColor,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
-            ),
-          ),
-          Expanded(
-            child: _isSearching
-                ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF7C3AED)))
-                : _searchResults.isEmpty
-                    ? Center(
-                        child: Text(
-                          _searchController.text.isEmpty
-                              ? 'Sélectionnez un type de profil et commencez à rechercher'
-                              : 'Aucun résultat trouvé',
-                          style: TextStyle(
-                            color: _subtitleColor,
-                            fontSize: 16,
-                          ),
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: _searchResults.length,
-                        itemBuilder: (context, index) {
-                          final user = _searchResults[index];
-                          return Container(
-                            margin: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: _cardColor,
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundImage: NetworkImage(user['imageUrl']),
-                                backgroundColor: _backgroundColor,
-                              ),
-                              title: Text(
-                                user['name'],
-                                style: TextStyle(
-                                  color: _textColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              subtitle: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: _accentViolet,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      user['type'],
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(
-                                      user['team'],
-                                      style: TextStyle(
-                                        color: _subtitleColor,
-                                        fontSize: 13,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              trailing: Icon(Icons.arrow_forward_ios,
-                                  color: _accentViolet, size: 18),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => MessagesPage(
-                                      selectedUserId: user['id'],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      ),
           ),
         ],
       ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (widget.opportunityTitle != null) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E23),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.orange.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Candidature pour:',
+                      style: TextStyle(
+                        color: Colors.orange,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.opportunityTitle!,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+
+            // Sélection du destinataire
+            if (_selectedUser == null) ...[
+              const Text(
+                'Destinataire',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _searchController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Rechercher un utilisateur...',
+                  hintStyle: TextStyle(color: Colors.grey[400]),
+                  prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFF1E1E23),
+                ),
+                onChanged: _filterUsers,
+              ),
+              const SizedBox(height: 16),
+
+              // Liste des utilisateurs
+              Expanded(
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: Colors.orange),
+                      )
+                    : _filteredUsers.isEmpty
+                        ? Center(
+                            child: Text(
+                              'Aucun utilisateur trouvé',
+                              style: TextStyle(
+                                color: Colors.grey[400],
+                                fontSize: 16,
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: _filteredUsers.length,
+                            itemBuilder: (context, index) {
+                              final user = _filteredUsers[index];
+                              return _buildUserItem(user);
+                            },
+                          ),
+              ),
+            ] else ...[
+              // Destinataire sélectionné
+              const Text(
+                'Destinataire',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E23),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    UserAvatar(
+                      name:
+                          '${_selectedUser!['first_name']} ${_selectedUser!['last_name']}',
+                      imageUrl: _selectedUser!['profile_image_url'],
+                      hasCustomImage:
+                          _selectedUser!['profile_image_url'] != null,
+                      radius: 20,
+                      profileType: _selectedUser!['profile_type'],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '${_selectedUser!['first_name']} ${_selectedUser!['last_name']}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    if (widget.receiverId == null)
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedUser = null;
+                          });
+                        },
+                        icon: const Icon(Icons.close, color: Colors.grey),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Message
+              const Text(
+                'Message',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: TextField(
+                  controller: _messageController,
+                  style: const TextStyle(color: Colors.white),
+                  maxLines: null,
+                  expands: true,
+                  textAlignVertical: TextAlignVertical.top,
+                  decoration: InputDecoration(
+                    hintText: widget.opportunityId != null
+                        ? 'Présentez-vous et expliquez pourquoi vous êtes intéressé par cette opportunité...'
+                        : 'Tapez votre message...',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFF1E1E23),
+                    contentPadding: const EdgeInsets.all(16),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
+  }
+
+  Widget _buildUserItem(Map<String, dynamic> user) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E23),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: UserAvatar(
+          name: '${user['first_name']} ${user['last_name']}',
+          imageUrl: user['profile_image_url'],
+          hasCustomImage: user['profile_image_url'] != null,
+          radius: 20,
+          profileType: user['profile_type'],
+        ),
+        title: Text(
+          '${user['first_name']} ${user['last_name']}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: user['profile_type'] != null
+            ? Text(
+                user['profile_type'],
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 14,
+                ),
+              )
+            : null,
+        onTap: () {
+          setState(() {
+            _selectedUser = user;
+          });
+        },
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _searchController.dispose();
+    super.dispose();
   }
 }

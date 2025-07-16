@@ -1,0 +1,11 @@
+# Configuration Stripe - Copiez ces variables dans votre fichier .env
+
+# Clés Stripe (obtenez-les sur https://dashboard.stripe.com/apikeys)
+STRIPE_PUBLISHABLE_KEY=pk_test_votre-cle-publique-stripe
+STRIPE_SECRET_KEY=sk_test_votre-cle-secrete-stripe
+
+# Webhook secret (obtenez-le sur https://dashboard.stripe.com/webhooks)
+STRIPE_WEBHOOK_SECRET=whsec_votre-secret-webhook-stripe
+
+# URL de votre webhook (pour les tests locaux, utilisez ngrok)
+# https://votre-domaine.com/api/payments/webhook 

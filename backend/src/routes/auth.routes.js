@@ -7,7 +7,12 @@ const pool = require('../config/db.config');
 // Route d'inscription
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, profile_type } = req.body;
+    const { 
+      name, 
+      email, 
+      password, 
+      profile_type
+    } = req.body;
 
     // Vérifier si l'email existe déjà
     const [existingUsers] = await pool.query(
@@ -33,6 +38,12 @@ router.post('/register', async (req, res) => {
 
     // Créer le profil spécifique selon le type
     switch (profile_type) {
+      case 'handibasket':
+        await pool.query(
+          'INSERT INTO handibasket_profiles (user_id) VALUES (?)',
+          [userId]
+        );
+        break;
       case 'coach_pro':
         await pool.query(
           'INSERT INTO coach_pro_profiles (user_id) VALUES (?)',
@@ -69,7 +80,7 @@ router.post('/register', async (req, res) => {
     const token = jwt.sign(
       { id: userId, email, profile_type },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      { expiresIn: '24h' } // Valeur par défaut fixe
     );
 
     // Retourner les informations de l'utilisateur
@@ -83,9 +94,10 @@ router.post('/register', async (req, res) => {
         profile_type
       }
     });
+
   } catch (error) {
     console.error('Erreur lors de l\'inscription:', error);
-    res.status(500).json({ message: 'Erreur lors de l\'inscription' });
+    res.status(500).json({ message: 'Erreur serveur lors de l\'inscription' });
   }
 });
 
@@ -116,7 +128,7 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign(
       { id: user.id, email: user.email, profile_type: user.profile_type },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      { expiresIn: '24h' } // Valeur par défaut fixe
     );
 
     // Retourner les informations de l'utilisateur
@@ -133,6 +145,39 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     console.error('Erreur lors de la connexion:', error);
     res.status(500).json({ message: 'Erreur lors de la connexion' });
+  }
+});
+
+// Route de validation du token
+router.get('/validate', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({ message: 'Token manquant' });
+    }
+
+    // Vérifier le token JWT
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Vérifier si l'utilisateur existe toujours
+    const [users] = await pool.query(
+      'SELECT id, name, email, profile_type FROM users WHERE id = ?',
+      [decoded.id]
+    );
+
+    if (users.length === 0) {
+      return res.status(401).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    res.json({ 
+      valid: true, 
+      user: users[0],
+      message: 'Token valide' 
+    });
+  } catch (error) {
+    console.error('Erreur lors de la validation du token:', error);
+    res.status(401).json({ message: 'Token invalide' });
   }
 });
 

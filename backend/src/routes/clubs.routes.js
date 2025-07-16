@@ -17,7 +17,7 @@ const checkProfileType = (allowedTypes) => {
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const [clubs] = await db.query(`
-      SELECT cp.*, u.name as club_name, u.email
+      SELECT cp.*, u.name as club_name, u.email, u.profile_image_url
       FROM club_profiles cp
       JOIN users u ON cp.user_id = u.id
       WHERE u.profile_type = 'club'
@@ -33,7 +33,7 @@ router.get('/', authMiddleware, async (req, res) => {
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const [clubs] = await db.query(`
-      SELECT cp.*, u.name as club_name, u.email
+      SELECT cp.*, u.name as club_name, u.email, u.profile_image_url
       FROM club_profiles cp
       JOIN users u ON cp.user_id = u.id
       WHERE cp.id = ? AND u.profile_type = 'club'

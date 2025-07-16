@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -8,6 +9,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Servir les fichiers statiques uploadés
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
 const authRoutes = require('./routes/auth.routes');
@@ -19,6 +23,13 @@ const clubsRoutes = require('./routes/clubs.routes');
 const coachesRoutes = require('./routes/coaches.routes');
 const annoncesRoutes = require('./routes/annonces.routes');
 const messagesRoutes = require('./routes/messages.routes');
+const handibasketRoutes = require('./routes/handibasket.routes');
+const subscriptionRoutes = require('./routes/subscription.routes');
+// const paymentRoutes = require('./routes/payment.routes'); // Désactivé temporairement
+const storeRoutes = require('./routes/store.routes');
+const uploadRoutes = require('./routes/upload.routes');
+const matchingRoutes = require('./routes/matching.routes');
+const contentRoutes = require('./routes/content.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -29,6 +40,13 @@ app.use('/api/clubs', clubsRoutes);
 app.use('/api/coaches', coachesRoutes);
 app.use('/api/annonces', annoncesRoutes);
 app.use('/api/messages', messagesRoutes);
+app.use('/api/handibasket', handibasketRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
+// app.use('/api/payments', paymentRoutes); // Désactivé temporairement
+app.use('/api/store', storeRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/matching', matchingRoutes);
+app.use('/api', contentRoutes);
 
 // Gestion des erreurs
 app.use((err, req, res, next) => {

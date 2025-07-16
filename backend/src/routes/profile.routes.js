@@ -19,7 +19,10 @@ const checkProfileType = (profileType) => {
 router.get('/player/profile', verifyToken, checkProfileType('player'), async (req, res) => {
   try {
     const [rows] = await db.query(
-      'SELECT p.*, u.name, u.email FROM player_profiles p JOIN users u ON p.user_id = u.id WHERE p.user_id = ?',
+      `SELECT p.*, u.name, u.email, u.gender, u.nationality, u.profile_image_url 
+       FROM player_profiles p 
+       JOIN users u ON p.user_id = u.id 
+       WHERE p.user_id = ?`,
       [req.user.id]
     );
 
@@ -36,6 +39,8 @@ router.get('/player/profile', verifyToken, checkProfileType('player'), async (re
 
 // Route pour mettre à jour le profil d'un joueur
 router.put('/player/profile', verifyToken, checkProfileType('player'), async (req, res) => {
+  const connection = await db.getConnection();
+  
   try {
     const {
       age,
@@ -47,22 +52,39 @@ router.put('/player/profile', verifyToken, checkProfileType('player'), async (re
       achievements,
       stats,
       video_url,
-      bio
+      bio,
+      gender,
+      nationality,
+      championship_level,
+      passport_type
     } = req.body;
 
+    await connection.beginTransaction();
+
+    // Mettre à jour les champs dans la table users (gender, nationality)
+    if (gender || nationality) {
+      await connection.query(
+        `UPDATE users SET 
+          gender = COALESCE(?, gender),
+          nationality = COALESCE(?, nationality)
+        WHERE id = ?`,
+        [gender, nationality, req.user.id]
+      );
+    }
+
     // Vérifier si le profil existe déjà
-    const [existingProfile] = await db.query(
+    const [existingProfile] = await connection.query(
       'SELECT id FROM player_profiles WHERE user_id = ?',
       [req.user.id]
     );
 
     if (existingProfile.length === 0) {
       // Créer un nouveau profil
-      await db.query(
+      await connection.query(
         `INSERT INTO player_profiles (
           user_id, age, height, weight, position, experience_years,
-          level, achievements, stats, video_url, bio
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          level, achievements, stats, video_url, bio, championship_level, passport_type
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           req.user.id,
           age,
@@ -74,12 +96,14 @@ router.put('/player/profile', verifyToken, checkProfileType('player'), async (re
           achievements,
           JSON.stringify(stats),
           video_url,
-          bio
+          bio,
+          championship_level,
+          passport_type
         ]
       );
     } else {
       // Mettre à jour le profil existant
-      await db.query(
+      await connection.query(
         `UPDATE player_profiles SET
           age = ?,
           height = ?,
@@ -90,7 +114,9 @@ router.put('/player/profile', verifyToken, checkProfileType('player'), async (re
           achievements = ?,
           stats = ?,
           video_url = ?,
-          bio = ?
+          bio = ?,
+          championship_level = ?,
+          passport_type = ?
         WHERE user_id = ?`,
         [
           age,
@@ -103,15 +129,157 @@ router.put('/player/profile', verifyToken, checkProfileType('player'), async (re
           JSON.stringify(stats),
           video_url,
           bio,
+          championship_level,
+          passport_type,
           req.user.id
         ]
       );
     }
 
+    await connection.commit();
     res.json({ message: 'Profil mis à jour avec succès' });
   } catch (error) {
+    await connection.rollback();
     console.error('Erreur lors de la mise à jour du profil joueur:', error);
     res.status(500).json({ message: 'Erreur serveur' });
+  } finally {
+    connection.release();
+  }
+});
+
+// Route pour récupérer le profil d'un joueur handibasket
+router.get('/handibasket/profile', verifyToken, checkProfileType('handibasket'), async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT p.*, u.name, u.email, u.gender, u.nationality 
+       FROM handibasket_profiles p 
+       JOIN users u ON p.user_id = u.id 
+       WHERE p.user_id = ?`,
+      [req.user.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Profil non trouvé' });
+    }
+
+    res.json(rows[0]);
+  } catch (error) {
+    console.error('Erreur lors de la récupération du profil handibasket:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Route pour mettre à jour le profil d'un joueur handibasket
+router.put('/handibasket/profile', verifyToken, checkProfileType('handibasket'), async (req, res) => {
+  const connection = await db.getConnection();
+  
+  try {
+    const {
+      age,
+      height,
+      weight,
+      position,
+      experience_years,
+      level,
+      achievements,
+      stats,
+      video_url,
+      bio,
+      gender,
+      nationality,
+      championship_level,
+      passport_type,
+      classification
+    } = req.body;
+
+    await connection.beginTransaction();
+
+    // Mettre à jour les champs dans la table users (gender, nationality)
+    if (gender || nationality) {
+      await connection.query(
+        `UPDATE users SET 
+          gender = COALESCE(?, gender),
+          nationality = COALESCE(?, nationality)
+        WHERE id = ?`,
+        [gender, nationality, req.user.id]
+      );
+    }
+
+    // Vérifier si le profil existe déjà
+    const [existingProfile] = await connection.query(
+      'SELECT id FROM handibasket_profiles WHERE user_id = ?',
+      [req.user.id]
+    );
+
+    if (existingProfile.length === 0) {
+      // Créer un nouveau profil
+      await connection.query(
+        `INSERT INTO handibasket_profiles (
+          user_id, age, height, weight, position, experience_years,
+          level, achievements, stats, video_url, bio, championship_level, passport_type, classification
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          req.user.id,
+          age,
+          height,
+          weight,
+          position,
+          experience_years,
+          level,
+          achievements,
+          JSON.stringify(stats),
+          video_url,
+          bio,
+          championship_level,
+          passport_type,
+          classification
+        ]
+      );
+    } else {
+      // Mettre à jour le profil existant
+      await connection.query(
+        `UPDATE handibasket_profiles SET
+          age = ?,
+          height = ?,
+          weight = ?,
+          position = ?,
+          experience_years = ?,
+          level = ?,
+          achievements = ?,
+          stats = ?,
+          video_url = ?,
+          bio = ?,
+          championship_level = ?,
+          passport_type = ?,
+          classification = ?
+        WHERE user_id = ?`,
+        [
+          age,
+          height,
+          weight,
+          position,
+          experience_years,
+          level,
+          achievements,
+          JSON.stringify(stats),
+          video_url,
+          bio,
+          championship_level,
+          passport_type,
+          classification,
+          req.user.id
+        ]
+      );
+    }
+
+    await connection.commit();
+    res.json({ message: 'Profil mis à jour avec succès' });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Erreur lors de la mise à jour du profil handibasket:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  } finally {
+    connection.release();
   }
 });
 
@@ -289,7 +457,7 @@ router.put('/coach_pro/profile', verifyToken, checkProfileType('coach_pro'), asy
 router.get('/juriste/profile', verifyToken, checkProfileType('juriste'), async (req, res) => {
   try {
     const [rows] = await db.query(
-      'SELECT j.*, u.name, u.email FROM juriste_profiles j JOIN users u ON j.user_id = u.id WHERE j.user_id = ?',
+      'SELECT j.*, u.name, u.email, u.profile_image_url FROM juriste_profiles j JOIN users u ON j.user_id = u.id WHERE j.user_id = ?',
       [req.user.id]
     );
 
@@ -370,7 +538,7 @@ router.put('/juriste/profile', verifyToken, checkProfileType('juriste'), async (
 router.get('/dieteticienne/profile', verifyToken, checkProfileType('dieteticienne'), async (req, res) => {
   try {
     const [rows] = await db.query(
-      'SELECT d.*, u.name, u.email FROM dieteticienne_profiles d JOIN users u ON d.user_id = u.id WHERE d.user_id = ?',
+      'SELECT d.*, u.name, u.email, u.profile_image_url FROM dieteticienne_profiles d JOIN users u ON d.user_id = u.id WHERE d.user_id = ?',
       [req.user.id]
     );
 
@@ -446,6 +614,93 @@ router.put('/dieteticienne/profile', verifyToken, checkProfileType('dieteticienn
     res.json({ message: 'Profil mis à jour avec succès' });
   } catch (error) {
     console.error('Erreur lors de la mise à jour du profil diététicienne:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Route pour récupérer le profil d'un joueur handibasket
+router.get('/handibasket/profile', verifyToken, checkProfileType('handibasket'), async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      'SELECT h.*, u.name, u.email, u.profile_image_url FROM handibasket_profiles h JOIN users u ON h.user_id = u.id WHERE h.user_id = ?',
+      [req.user.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Profil non trouvé' });
+    }
+
+    res.json(rows[0]);
+  } catch (error) {
+    console.error('Erreur lors de la récupération du profil handibasket:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Route pour mettre à jour le profil d'un joueur handibasket
+router.put('/handibasket/profile', verifyToken, checkProfileType('handibasket'), async (req, res) => {
+  try {
+    const {
+      birth_date,
+      handicap_type,
+      cat,
+      residence,
+      club,
+      coach,
+      profession
+    } = req.body;
+
+    const [existingProfile] = await db.query(
+      'SELECT id FROM handibasket_profiles WHERE user_id = ?',
+      [req.user.id]
+    );
+
+    if (existingProfile.length === 0) {
+      // Créer un nouveau profil
+      await db.query(
+        `INSERT INTO handibasket_profiles (
+          user_id, birth_date, handicap_type, cat, residence,
+          club, coach, profession
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          req.user.id,
+          birth_date,
+          handicap_type,
+          cat,
+          residence,
+          club,
+          coach,
+          profession
+        ]
+      );
+    } else {
+      // Mettre à jour le profil existant
+      await db.query(
+        `UPDATE handibasket_profiles SET
+          birth_date = ?,
+          handicap_type = ?,
+          cat = ?,
+          residence = ?,
+          club = ?,
+          coach = ?,
+          profession = ?
+        WHERE user_id = ?`,
+        [
+          birth_date,
+          handicap_type,
+          cat,
+          residence,
+          club,
+          coach,
+          profession,
+          req.user.id
+        ]
+      );
+    }
+
+    res.json({ message: 'Profil mis à jour avec succès' });
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour du profil handibasket:', error);
     res.status(500).json({ message: 'Erreur serveur' });
   }
 });

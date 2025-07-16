@@ -3,10 +3,13 @@ const router = express.Router();
 const db = require('../config/db.config');
 const verifyToken = require('../middleware/auth.middleware');
 
-// Récupérer tous les joueurs
+// Récupérer tous les joueurs avec filtres
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const query = `
+    // Récupérer les paramètres de filtre
+    const { championship_level, gender, position, passport_type } = req.query;
+    
+    let query = `
       SELECT 
         pp.id,
         pp.user_id,
@@ -16,6 +19,8 @@ router.get('/', verifyToken, async (req, res) => {
         pp.position,
         pp.experience_years,
         pp.level,
+        pp.championship_level,
+        pp.passport_type,
         pp.achievements,
         pp.stats,
         pp.video_url,
@@ -23,14 +28,45 @@ router.get('/', verifyToken, async (req, res) => {
         pp.created_at,
         pp.updated_at,
         u.name,
-        u.email
+        u.email,
+        u.gender,
+        u.nationality,
+        u.profile_image_url
       FROM player_profiles pp
       JOIN users u ON pp.user_id = u.id
-      ORDER BY u.name
+      WHERE 1=1
     `;
+    
+    const queryParams = [];
+    
+    // Ajouter les filtres si fournis
+    if (championship_level && championship_level !== 'all') {
+      query += ' AND pp.championship_level = ?';
+      queryParams.push(championship_level);
+    }
+    
+    if (gender && gender !== 'all') {
+      query += ' AND u.gender = ?';
+      queryParams.push(gender);
+    }
+    
+    if (position && position !== 'all') {
+      query += ' AND pp.position = ?';
+      queryParams.push(position);
+    }
+    
+    if (passport_type && passport_type !== 'all') {
+      query += ' AND pp.passport_type = ?';
+      queryParams.push(passport_type);
+    }
+    
+    query += ' ORDER BY u.name';
 
-    const [players] = await db.query(query);
-    console.log('Données des joueurs récupérées:', JSON.stringify(players, null, 2));
+    const [players] = await db.query(query, queryParams);
+    console.log('Données des joueurs récupérées avec filtres:', {
+      filtres: { championship_level, gender, position, passport_type },
+      nombre_resultats: players.length
+    });
     res.json(players);
   } catch (error) {
     console.error('Erreur lors de la récupération des joueurs:', error);
@@ -51,6 +87,8 @@ router.get('/:id', verifyToken, async (req, res) => {
         pp.position,
         pp.experience_years,
         pp.level,
+        pp.championship_level,
+        pp.passport_type,
         pp.achievements,
         pp.stats,
         pp.video_url,
@@ -58,7 +96,10 @@ router.get('/:id', verifyToken, async (req, res) => {
         pp.created_at,
         pp.updated_at,
         u.name,
-        u.email
+        u.email,
+        u.gender,
+        u.nationality,
+        u.profile_image_url
       FROM player_profiles pp
       JOIN users u ON pp.user_id = u.id
       WHERE pp.id = ?

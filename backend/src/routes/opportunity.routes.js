@@ -3,15 +3,15 @@ const router = express.Router();
 const db = require('../config/db.config');
 const authMiddleware = require('../middleware/auth.middleware');
 
-// Récupérer toutes les opportunités
+// Récupérer toutes les opportunités (depuis annonces)
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const [opportunities] = await db.query(`
-      SELECT o.*, t.name as team_name, t.city as team_city
-      FROM opportunities o
-      JOIN teams t ON o.team_id = t.id
-      WHERE o.status = 'open'
-      ORDER BY o.created_at DESC
+      SELECT a.*, u.name as user_name, u.email as user_email
+      FROM annonces a
+      JOIN users u ON a.user_id = u.id
+      WHERE a.status = 'open'
+      ORDER BY a.created_at DESC
     `);
     res.json(opportunities);
   } catch (error) {
@@ -156,30 +156,55 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// Postuler à une opportunité
+// Postuler à une opportunité (via messagerie)
 router.post('/:id/apply', authMiddleware, async (req, res) => {
   try {
     const { message } = req.body;
     const userId = req.user.id;
-    const opportunityId = req.params.id;
+    const annonceId = req.params.id;
 
-    // Vérifier si l'utilisateur a déjà postulé
-    const [existing] = await db.query(
-      'SELECT * FROM applications WHERE user_id = ? AND opportunity_id = ?',
-      [userId, opportunityId]
+    console.log('Tentative de candidature:', { userId, annonceId, message });
+
+    // Vérifier que l'annonce existe
+    const [annonce] = await db.query(
+      'SELECT * FROM annonces WHERE id = ? AND status = "open"',
+      [annonceId]
     );
 
-    if (existing.length > 0) {
-      return res.status(400).json({ message: 'Vous avez déjà postulé à cette opportunité' });
+    if (annonce.length === 0) {
+      return res.status(404).json({ message: 'Annonce non trouvée ou fermée' });
     }
 
-    // Créer la candidature
-    await db.query(
-      'INSERT INTO applications (user_id, opportunity_id, message) VALUES (?, ?, ?)',
-      [userId, opportunityId, message]
+    const receiverId = annonce[0].user_id;
+
+    // Vérifier si une conversation existe déjà
+    let conversationId;
+    const [existingConv] = await db.query(
+      'SELECT id FROM conversations WHERE opportunity_id = ? AND sender_id = ? AND receiver_id = ?',
+      [annonceId, userId, receiverId]
     );
 
-    res.status(201).json({ message: 'Candidature envoyée avec succès' });
+    if (existingConv.length > 0) {
+      conversationId = existingConv[0].id;
+    } else {
+      // Créer une nouvelle conversation
+      const [convResult] = await db.query(
+        'INSERT INTO conversations (opportunity_id, sender_id, receiver_id, subject) VALUES (?, ?, ?, ?)',
+        [annonceId, userId, receiverId, `Candidature: ${annonce[0].title}`]
+      );
+      conversationId = convResult.insertId;
+    }
+
+    // Ajouter le message
+    await db.query(
+      'INSERT INTO messages (conversation_id, sender_id, content, message_type) VALUES (?, ?, ?, ?)',
+      [conversationId, userId, message, 'application']
+    );
+
+    res.status(201).json({ 
+      message: 'Candidature envoyée avec succès via messagerie',
+      conversationId 
+    });
   } catch (error) {
     console.error('Erreur lors de la candidature:', error);
     res.status(500).json({ message: 'Erreur serveur' });

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'login_page.dart';
-import 'home_page.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'home_page.dart';
+import 'services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
   final String profileType;
@@ -20,7 +20,9 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final AuthService _authService = AuthService();
   final _formKey = GlobalKey<FormState>();
+
   String name = '';
   String email = '';
   String password = '';
@@ -35,47 +37,36 @@ class _RegisterPageState extends State<RegisterPage> {
     if (_formKey.currentState!.validate()) {
       setState(() => isLoading = true);
       try {
-        final response = await http.post(
-          Uri.parse('http://192.168.1.43:3000/api/auth/register'),
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode({
-            'name': name,
-            'email': email,
-            'password': password,
-            'profile_type': widget.profileId,
-          }),
+        Map<String, dynamic> requestBody = {
+          'name': name,
+          'email': email,
+          'password': password,
+          'profile_type': widget.profileId,
+        };
+
+        // Utiliser AuthService pour l'inscription
+        final userData = await _authService.register(requestBody);
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Inscription réussie !'),
+            backgroundColor: Colors.green,
+          ),
         );
 
-        if (response.statusCode == 201) {
-          final userData = json.decode(response.body);
-
-          // Sauvegarder les données de l'utilisateur
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('user', json.encode(userData));
-          await prefs.setString('token', userData['token']);
-
-          if (!mounted) return;
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const HomePage()),
-            (route) => false,
-          );
-        } else {
-          final error = json.decode(response.body);
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content:
-                  Text(error['message'] ?? 'Erreur lors de l\'inscription'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const HomePage()),
+          (route) => false,
+        );
       } catch (e) {
         print('Erreur inattendue: $e');
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Une erreur inattendue s\'est produite: $e'),
+            content:
+                Text('Erreur: ${e.toString().replaceAll('Exception: ', '')}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -194,37 +185,82 @@ class _RegisterPageState extends State<RegisterPage> {
                   SizedBox(
                     height: 52,
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF9B5CFF),
-                        shape: const StadiumBorder(),
-                      ),
                       onPressed: isLoading ? null : _register,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
                       child: isLoading
-                          ? const CircularProgressIndicator(
-                              color: Colors.white,
-                            )
+                          ? const CircularProgressIndicator(color: Colors.white)
                           : const Text(
-                              'S\'inscrire',
+                              'Créer le compte',
                               style: TextStyle(
-                                fontSize: 18,
+                                color: Colors.white,
                                 fontWeight: FontWeight.bold,
+                                fontSize: 18,
                               ),
                             ),
                     ),
                   ),
-                  const SizedBox(height: 18),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (context) => const LoginPage(),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'Déjà inscrit ? Se connecter',
-                      style: TextStyle(color: Color(0xFF9B5CFF)),
+                  const SizedBox(height: 20),
+                  if (widget.profileId == 'handibasket')
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border:
+                            Border.all(color: Colors.orange.withOpacity(0.3)),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: Colors.orange,
+                            size: 24,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Profil simplifié',
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Vous pourrez compléter votre profil avec vos informations sportives après l\'inscription dans la section "Profil".',
+                            style: TextStyle(
+                              color: Colors.orange.withOpacity(0.9),
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Déjà un compte ? ',
+                        style: TextStyle(color: Colors.white54),
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: const Text(
+                          'Se connecter',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

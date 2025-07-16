@@ -88,6 +88,23 @@ class ProfileService {
                   'required': true,
                 },
                 {
+                  'name': 'gender',
+                  'label': 'Genre',
+                  'type': 'text',
+                  'required': true,
+                  'options': [
+                    'masculin',
+                    'feminin',
+                  ],
+                },
+                {
+                  'name': 'nationality',
+                  'label': 'Nationalité',
+                  'type': 'text',
+                  'required': false,
+                  'default': 'France',
+                },
+                {
                   'name': 'height',
                   'label': 'Taille (cm)',
                   'type': 'number',
@@ -99,17 +116,49 @@ class ProfileService {
                   'type': 'number',
                   'required': true,
                 },
+              ],
+            },
+            {
+              'title': 'Informations sportives',
+              'fields': [
                 {
                   'name': 'position',
                   'label': 'Poste',
                   'type': 'text',
                   'required': true,
                   'options': [
-                    'Meneur',
-                    'Arrière',
-                    'Ailier',
-                    'Ailier fort',
-                    'Pivot'
+                    'meneur',
+                    'arriere',
+                    'ailier',
+                    'ailier_fort',
+                    'pivot',
+                    'polyvalent'
+                  ],
+                },
+                {
+                  'name': 'championship_level',
+                  'label': 'Niveau de championnat',
+                  'type': 'text',
+                  'required': true,
+                  'options': [
+                    'nationale',
+                    'regional',
+                    'departemental',
+                  ],
+                },
+                {
+                  'name': 'passport_type',
+                  'label': 'Type de passeport',
+                  'type': 'text',
+                  'required': true,
+                  'options': [
+                    'france',
+                    'europe_ue',
+                    'europe_hors_ue',
+                    'afrique',
+                    'amerique',
+                    'canada',
+                    'autres'
                   ],
                 },
                 {
@@ -129,6 +178,179 @@ class ProfileService {
                     'Semi-pro',
                     'Professionnel'
                   ],
+                },
+              ],
+            },
+            {
+              'title': 'Statistiques (optionnelles)',
+              'fields': [
+                {
+                  'name': 'stats.points',
+                  'label': 'Points par match',
+                  'type': 'number',
+                  'required': false,
+                },
+                {
+                  'name': 'stats.rebounds',
+                  'label': 'Rebonds par match',
+                  'type': 'number',
+                  'required': false,
+                },
+                {
+                  'name': 'stats.assists',
+                  'label': 'Passes décisives par match',
+                  'type': 'number',
+                  'required': false,
+                },
+                {
+                  'name': 'stats.steals',
+                  'label': 'Interceptions par match',
+                  'type': 'number',
+                  'required': false,
+                },
+                {
+                  'name': 'stats.blocks',
+                  'label': 'Contres par match',
+                  'type': 'number',
+                  'required': false,
+                },
+              ],
+            },
+            {
+              'title': 'Autres informations (optionnelles)',
+              'fields': [
+                {
+                  'name': 'achievements',
+                  'label': 'Palmarès',
+                  'type': 'multiline',
+                  'required': false,
+                },
+                {
+                  'name': 'video_url',
+                  'label': 'Lien vidéo',
+                  'type': 'url',
+                  'required': false,
+                },
+                {
+                  'name': 'bio',
+                  'label': 'Biographie',
+                  'type': 'multiline',
+                  'required': false,
+                },
+              ],
+            },
+          ],
+        };
+
+      case 'handibasket':
+        return {
+          'sections': [
+            {
+              'title': 'Informations personnelles',
+              'fields': [
+                {
+                  'name': 'age',
+                  'label': 'Âge',
+                  'type': 'number',
+                  'required': true,
+                },
+                {
+                  'name': 'gender',
+                  'label': 'Genre',
+                  'type': 'text',
+                  'required': true,
+                  'options': [
+                    'masculin',
+                    'feminin',
+                  ],
+                },
+                {
+                  'name': 'nationality',
+                  'label': 'Nationalité',
+                  'type': 'text',
+                  'required': false,
+                  'default': 'France',
+                },
+                {
+                  'name': 'height',
+                  'label': 'Taille (cm)',
+                  'type': 'number',
+                  'required': true,
+                },
+                {
+                  'name': 'weight',
+                  'label': 'Poids (kg)',
+                  'type': 'number',
+                  'required': true,
+                },
+              ],
+            },
+            {
+              'title': 'Informations sportives',
+              'fields': [
+                {
+                  'name': 'position',
+                  'label': 'Poste',
+                  'type': 'text',
+                  'required': true,
+                  'options': [
+                    'meneur',
+                    'arriere',
+                    'ailier',
+                    'ailier_fort',
+                    'pivot',
+                    'polyvalent'
+                  ],
+                },
+                {
+                  'name': 'championship_level',
+                  'label': 'Niveau de championnat',
+                  'type': 'text',
+                  'required': true,
+                  'options': [
+                    'nationale',
+                    'regional',
+                    'departemental',
+                  ],
+                },
+                {
+                  'name': 'passport_type',
+                  'label': 'Type de passeport',
+                  'type': 'text',
+                  'required': true,
+                  'options': [
+                    'france',
+                    'europe_ue',
+                    'europe_hors_ue',
+                    'afrique',
+                    'amerique',
+                    'canada',
+                    'autres'
+                  ],
+                },
+                {
+                  'name': 'experience_years',
+                  'label': 'Années d\'expérience',
+                  'type': 'number',
+                  'required': true,
+                },
+                {
+                  'name': 'level',
+                  'label': 'Niveau',
+                  'type': 'text',
+                  'required': true,
+                  'options': [
+                    'Débutant',
+                    'Amateur',
+                    'Semi-pro',
+                    'Professionnel'
+                  ],
+                },
+                {
+                  'name': 'classification',
+                  'label': 'Classification handibasket',
+                  'type': 'text',
+                  'required': false,
                 },
               ],
             },
@@ -414,6 +636,74 @@ class ProfileService {
           ],
         };
 
+      case 'handibasket':
+        return {
+          'sections': [
+            {
+              'title': 'Informations personnelles',
+              'fields': [
+                {
+                  'name': 'birth_date',
+                  'label': 'Date de naissance',
+                  'type': 'date',
+                  'required': true,
+                },
+                {
+                  'name': 'residence',
+                  'label': 'Lieu de résidence',
+                  'type': 'text',
+                  'required': true,
+                },
+                {
+                  'name': 'profession',
+                  'label': 'Profession',
+                  'type': 'text',
+                  'required': true,
+                },
+              ],
+            },
+            {
+              'title': 'Informations sportives',
+              'fields': [
+                {
+                  'name': 'handicap_type',
+                  'label': 'Type de handicap',
+                  'type': 'text',
+                  'required': true,
+                },
+                {
+                  'name': 'cat',
+                  'label': 'Classification CAT',
+                  'type': 'text',
+                  'required': true,
+                  'options': [
+                    '1.0',
+                    '1.5',
+                    '2.0',
+                    '2.5',
+                    '3.0',
+                    '3.5',
+                    '4.0',
+                    '4.5'
+                  ],
+                },
+                {
+                  'name': 'club',
+                  'label': 'Club actuel',
+                  'type': 'text',
+                  'required': false,
+                },
+                {
+                  'name': 'coach',
+                  'label': 'Entraîneur',
+                  'type': 'text',
+                  'required': false,
+                },
+              ],
+            },
+          ],
+        };
+
       default:
         return {
           'sections': [
@@ -441,17 +731,48 @@ class ProfileService {
 
   // Récupérer la liste des joueurs
   Future<List<Map<String, dynamic>>> getPlayers() async {
+    return getPlayersWithFilters();
+  }
+
+  // Récupérer la liste des joueurs avec filtres
+  Future<List<Map<String, dynamic>>> getPlayersWithFilters({
+    String? championshipLevel,
+    String? gender,
+    String? position,
+    String? passportType,
+  }) async {
     final token = await _authService.getToken();
 
     if (token == null) {
       throw Exception('Non authentifié');
     }
 
-    print('Récupération de la liste des joueurs');
+    // Construire l'URL avec les paramètres de filtre
+    String url = '$baseUrl/players';
+    List<String> queryParams = [];
+
+    if (championshipLevel != null && championshipLevel != 'all') {
+      queryParams.add('championship_level=$championshipLevel');
+    }
+    if (gender != null && gender != 'all') {
+      queryParams.add('gender=$gender');
+    }
+    if (position != null && position != 'all') {
+      queryParams.add('position=$position');
+    }
+    if (passportType != null && passportType != 'all') {
+      queryParams.add('passport_type=$passportType');
+    }
+
+    if (queryParams.isNotEmpty) {
+      url += '?' + queryParams.join('&');
+    }
+
+    print('Récupération de la liste des joueurs avec filtres: $url');
     print('Token: $token');
 
     final response = await http.get(
-      Uri.parse('$baseUrl/players'),
+      Uri.parse(url),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -628,6 +949,31 @@ class ProfileService {
     } catch (e) {
       print('Erreur lors de la fermeture de l\'opportunité: $e');
       rethrow;
+    }
+  }
+
+  // Récupérer tous les utilisateurs
+  Future<List<Map<String, dynamic>>> getUsers() async {
+    final token = await _authService.getToken();
+
+    if (token == null) {
+      throw Exception('Non authentifié');
+    }
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/users'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((user) => user as Map<String, dynamic>).toList();
+    } else {
+      throw Exception(
+          'Erreur lors de la récupération des utilisateurs: ${response.body}');
     }
   }
 }

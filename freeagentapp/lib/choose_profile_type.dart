@@ -15,6 +15,13 @@ class ChooseProfileTypePage extends StatelessWidget {
             'Créez votre profil de joueur et trouvez des opportunités',
       },
       {
+        'id': 'handibasket',
+        'label': 'Joueur Handibasket',
+        'image': 'assets/handibasket.png',
+        'description':
+            'Créez votre profil de joueur handibasket et rejoignez la communauté',
+      },
+      {
         'id': 'coach_pro',
         'label': 'Coach Sportif Professionnel',
         'image': 'assets/Maquette app mobile 5 mai 2025.png',

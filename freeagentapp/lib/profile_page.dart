@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'login_page.dart';
+import 'premium_page.dart';
+import 'profile_photo_page.dart';
+import 'subscription_management_page.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/profile_service.dart';
 import 'services/auth_service.dart';
+import 'services/subscription_service.dart';
+import 'services/profile_photo_service.dart';
+import 'widgets/user_avatar.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -20,7 +26,18 @@ class _ProfilePageState extends State<ProfilePage> {
   final _formKey = GlobalKey<FormState>();
   final _profileService = ProfileService();
   final _authService = AuthService();
+  final _subscriptionService = SubscriptionService();
+  final _profilePhotoService = ProfilePhotoService();
   final Map<String, TextEditingController> _controllers = {};
+
+  // Variables pour le statut d'abonnement
+  String _subscriptionType = 'free';
+  bool _isPremium = false;
+  DateTime? _subscriptionExpiry;
+
+  // Variables pour la photo de profil
+  String? _profileImageUrl;
+  bool _hasCustomImage = false;
 
   @override
   void initState() {
@@ -44,6 +61,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
         // Charger les données du profil
         await _loadProfile();
+
+        // Charger le statut d'abonnement
+        await _loadSubscriptionStatus();
+
+        // Charger la photo de profil
+        await _loadProfilePhoto();
       } else {
         print('Aucune donnée utilisateur trouvée');
         // Rediriger vers la page de connexion si pas de données utilisateur
@@ -57,6 +80,41 @@ class _ProfilePageState extends State<ProfilePage> {
       print('Erreur lors du chargement des données: $e');
     } finally {
       setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> _loadSubscriptionStatus() async {
+    try {
+      final subscriptionStatus =
+          await _subscriptionService.getSubscriptionStatus();
+      setState(() {
+        _subscriptionType = subscriptionStatus.type;
+        _isPremium = subscriptionStatus.isPremium;
+        _subscriptionExpiry = subscriptionStatus.expiry;
+      });
+    } catch (e) {
+      print('Erreur lors du chargement du statut d\'abonnement: $e');
+      // Valeurs par défaut en cas d'erreur
+      setState(() {
+        _subscriptionType = 'free';
+        _isPremium = false;
+        _subscriptionExpiry = null;
+      });
+    }
+  }
+
+  Future<void> _loadProfilePhoto() async {
+    try {
+      final photoData = await _profilePhotoService.getCurrentProfileImage();
+      if (photoData != null) {
+        setState(() {
+          _profileImageUrl = photoData['imageUrl'];
+          _hasCustomImage = photoData['hasCustomImage'] ?? false;
+        });
+      }
+    } catch (e) {
+      print('Erreur lors du chargement de la photo de profil: $e');
+      // Pas d'erreur affichée, on garde les valeurs par défaut
     }
   }
 
@@ -90,8 +148,13 @@ class _ProfilePageState extends State<ProfilePage> {
             _controllers[key]?.text = '';
           }
         } else {
-          // Initialiser avec les données existantes ou une valeur vide
-          _controllers[key]?.text = data[key]?.toString() ?? '';
+          // Pour les champs gender et nationality, prendre les données depuis userData
+          if (key == 'gender' || key == 'nationality') {
+            _controllers[key]?.text = userData?[key]?.toString() ?? '';
+          } else {
+            // Initialiser avec les données existantes ou une valeur vide
+            _controllers[key]?.text = data[key]?.toString() ?? '';
+          }
         }
       }
     } catch (e) {
@@ -124,8 +187,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
       await _profileService.updateProfile(data);
 
-      // Recharger les données du profil
-      await _loadProfile();
+      // Recharger les données utilisateur pour récupérer les nouveaux champs gender et nationality
+      await _loadUserData();
 
       // Sortir du mode édition
       setState(() {
@@ -282,11 +345,22 @@ class _ProfilePageState extends State<ProfilePage> {
         value = profileData![parts[0]][parts[1]].toString();
       }
     } else {
-      value = profileData?[fieldName]?.toString() ?? '';
+      // Pour les champs gender et nationality, regarder dans userData
+      if (fieldName == 'gender' || fieldName == 'nationality') {
+        value = userData?[fieldName]?.toString() ?? '';
+      } else {
+        value = profileData?[fieldName]?.toString() ?? '';
+      }
     }
 
     if (value.isEmpty) {
       value = 'Non renseigné';
+    } else {
+      // Appliquer les libellés personnalisés si disponibles
+      Map<String, String> customLabels = _getCustomLabels(fieldName);
+      if (customLabels.containsKey(value)) {
+        value = customLabels[value]!;
+      }
     }
 
     return Padding(
@@ -471,13 +545,17 @@ class _ProfilePageState extends State<ProfilePage> {
 
       case 'text':
         if (field['options'] != null) {
+          // Créer un map pour les libellés personnalisés
+          Map<String, String> customLabels = _getCustomLabels(field['name']);
+
           fieldWidget = DropdownButtonFormField<String>(
             value: controller.text.isEmpty ? null : controller.text,
             items: field['options'].map<DropdownMenuItem<String>>((option) {
+              String displayLabel = customLabels[option] ?? option;
               return DropdownMenuItem<String>(
                 value: option,
-                child:
-                    Text(option, style: const TextStyle(color: Colors.white)),
+                child: Text(displayLabel,
+                    style: const TextStyle(color: Colors.white)),
               );
             }).toList(),
             onChanged: (value) {
@@ -487,6 +565,7 @@ class _ProfilePageState extends State<ProfilePage> {
             },
             style: const TextStyle(color: Colors.white),
             decoration: _getInputDecoration(field['label']),
+            dropdownColor: const Color(0xFF18171C),
             validator: (value) {
               if (field['required'] && (value == null || value.isEmpty)) {
                 return 'Ce champ est requis';
@@ -561,17 +640,27 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildProfileHeader() {
     return Column(
       children: [
-        CircleAvatar(
+        UserAvatar(
+          name: userData?['name'],
+          imageUrl: _profileImageUrl,
+          hasCustomImage: _hasCustomImage,
           radius: 56,
-          backgroundColor: const Color(0xFF9B5CFF),
-          child: Text(
-            (userData?['name'] ?? 'U')[0].toUpperCase(),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          showBorder: true,
+          borderColor: const Color(0xFF9B5CFF),
+          showEditIcon: true,
+          profileType: userData?['profile_type'],
+          onTap: () {
+            Navigator.of(context)
+                .push(
+              MaterialPageRoute(
+                builder: (context) => const ProfilePhotoPage(),
+              ),
+            )
+                .then((_) {
+              // Recharger la photo après retour de la page de gestion
+              _loadProfilePhoto();
+            });
+          },
         ),
         const SizedBox(height: 16),
         Text(
@@ -606,14 +695,207 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
         ),
+        const SizedBox(height: 16),
+
+        // Statut d'abonnement
+        _buildSubscriptionBadge(),
+
+        // Bouton CTA pour les utilisateurs non premium
+        if (!_isPremium) ...[
+          const SizedBox(height: 16),
+          _buildPremiumCTA(),
+        ],
       ],
     );
+  }
+
+  Widget _buildSubscriptionBadge() {
+    Color badgeColor;
+    String badgeText;
+    IconData badgeIcon;
+
+    switch (_subscriptionType) {
+      case 'premium_basic':
+        badgeColor = const Color(0xFF4CAF50);
+        badgeText = 'Premium Basic';
+        badgeIcon = Icons.star;
+        break;
+      case 'premium_pro':
+        badgeColor = const Color(0xFFFFD700);
+        badgeText = 'Premium Pro';
+        badgeIcon = Icons.star;
+        break;
+      default:
+        badgeColor = const Color(0xFF757575);
+        badgeText = 'Gratuit';
+        badgeIcon = Icons.person;
+        break;
+    }
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const SubscriptionManagementPage(),
+          ),
+        ).then((_) {
+          // Recharger les données après retour de la page de gestion
+          _loadSubscriptionStatus();
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: badgeColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: badgeColor,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              badgeIcon,
+              color: badgeColor,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              badgeText,
+              style: TextStyle(
+                color: badgeColor,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (_subscriptionExpiry != null && _isPremium) ...[
+              const SizedBox(width: 4),
+              Text(
+                '•',
+                style: TextStyle(
+                  color: badgeColor,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                _formatExpiryDate(_subscriptionExpiry!),
+                style: TextStyle(
+                  color: badgeColor.withOpacity(0.8),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+            const SizedBox(width: 8),
+            Icon(
+              Icons.settings,
+              color: badgeColor.withOpacity(0.6),
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPremiumCTA() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF9B5CFF).withOpacity(0.1),
+            const Color(0xFF9B5CFF).withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF9B5CFF).withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.star,
+            color: Color(0xFFFFE66D),
+            size: 32,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Passez Premium !',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Débloquez toutes les fonctionnalités et boostez votre profil',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const PremiumPage(),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF9B5CFF),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: const Text(
+              'Découvrir Premium',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatExpiryDate(DateTime expiry) {
+    final now = DateTime.now();
+    final difference = expiry.difference(now).inDays;
+
+    if (difference <= 0) {
+      return 'Expiré';
+    } else if (difference == 1) {
+      return 'Expire demain';
+    } else if (difference <= 7) {
+      return 'Expire dans $difference jours';
+    } else {
+      return 'Expire le ${expiry.day}/${expiry.month}/${expiry.year}';
+    }
   }
 
   String _getProfileTypeLabel(String profileType) {
     switch (profileType) {
       case 'player':
         return 'Joueur';
+      case 'handibasket':
+        return 'Joueur Handibasket';
       case 'coach_pro':
         return 'Coach Professionnel';
       case 'coach_basket':
@@ -626,6 +908,43 @@ class _ProfilePageState extends State<ProfilePage> {
         return 'Club';
       default:
         return profileType;
+    }
+  }
+
+  Map<String, String> _getCustomLabels(String fieldName) {
+    switch (fieldName) {
+      case 'gender':
+        return {
+          'masculin': 'Masculin',
+          'feminin': 'Féminin',
+        };
+      case 'position':
+        return {
+          'meneur': 'Meneur',
+          'arriere': 'Arrière',
+          'ailier': 'Ailier',
+          'ailier_fort': 'Ailier fort',
+          'pivot': 'Pivot',
+          'polyvalent': 'Polyvalent',
+        };
+      case 'championship_level':
+        return {
+          'nationale': 'Nationale',
+          'regional': 'Régional',
+          'departemental': 'Départemental',
+        };
+      case 'passport_type':
+        return {
+          'france': 'France',
+          'europe_ue': 'Europe U.E',
+          'europe_hors_ue': 'Europe hors U.E',
+          'afrique': 'Afrique',
+          'amerique': 'Amérique',
+          'canada': 'Canada',
+          'autres': 'Autres',
+        };
+      default:
+        return {};
     }
   }
 

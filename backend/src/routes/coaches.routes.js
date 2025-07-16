@@ -11,6 +11,7 @@ router.get('/', authMiddleware, async (req, res) => {
         cp.*,
         u.name,
         u.email,
+        u.profile_image_url,
         'coach_pro' as type
       FROM coach_pro_profiles cp
       JOIN users u ON cp.user_id = u.id
@@ -20,6 +21,7 @@ router.get('/', authMiddleware, async (req, res) => {
         cb.*,
         u.name,
         u.email,
+        u.profile_image_url,
         'coach_basket' as type
       FROM coach_basket_profiles cb
       JOIN users u ON cb.user_id = u.id
@@ -40,6 +42,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
         cp.*,
         u.name,
         u.email,
+        u.profile_image_url,
         'coach_pro' as type
       FROM coach_pro_profiles cp
       JOIN users u ON cp.user_id = u.id
@@ -49,6 +52,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
         cb.*,
         u.name,
         u.email,
+        u.profile_image_url,
         'coach_basket' as type
       FROM coach_basket_profiles cb
       JOIN users u ON cb.user_id = u.id

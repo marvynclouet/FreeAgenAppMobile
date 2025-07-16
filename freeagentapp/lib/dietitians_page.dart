@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'services/profile_service.dart';
+import 'services/message_service.dart';
+import 'messages_page.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'widgets/user_avatar.dart';
 
 class DietitiansPage extends StatefulWidget {
   const DietitiansPage({Key? key}) : super(key: key);
@@ -98,17 +101,12 @@ class _DietitiansPageState extends State<DietitiansPage> {
       itemBuilder: (context, index) {
         final dietitian = dietitians[index];
         return ListTile(
-          leading: CircleAvatar(
-            backgroundColor: const Color(0xFF4CAF50),
+          leading: UserAvatar(
+            name: dietitian['name'],
+            imageUrl: dietitian['profile_image_url'],
+            hasCustomImage: dietitian['profile_image_url'] != null,
             radius: 28,
-            child: Text(
-              (dietitian['name'] ?? 'D')[0].toUpperCase(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
+            profileType: 'dieteticienne',
           ),
           title: Text(
             dietitian['name'] ?? 'Diététicien',
@@ -166,6 +164,104 @@ class DietitianDetailPage extends StatelessWidget {
     }
   }
 
+  Future<void> _sendMessage(BuildContext context) async {
+    final messageController = TextEditingController();
+    messageController.text = 'Bonjour, je souhaiterais entrer en contact avec vous.';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF18171C),
+          title: Text(
+            'Envoyer un message à ${dietitian['name'] ?? 'ce diététicien'}',
+            style: const TextStyle(color: Colors.white),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Votre message:',
+                style: TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: messageController,
+                maxLines: 4,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  hintText: 'Tapez votre message ici...',
+                  hintStyle: TextStyle(color: Colors.white38),
+                  border: OutlineInputBorder(),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white38),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.purple),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text(
+                'Annuler',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Envoyer'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true && messageController.text.trim().isNotEmpty) {
+      final messageService = MessageService();
+      
+      try {
+        // Créer une nouvelle conversation
+        final result = await messageService.createConversation(
+          receiverId: dietitian['user_id'] ?? dietitian['id'],
+          content: messageController.text.trim(),
+          subject: 'Contact via FreeAgent App',
+        );
+
+        if (result != null && result['conversationId'] != null) {
+          // Naviguer vers la page de conversation
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ConversationPage(
+                conversationId: result['conversationId'],
+                contactName: dietitian['name'] ?? 'Diététicien',
+                opportunityTitle: '',
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de l\'envoi du message: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+
+    messageController.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -180,43 +276,65 @@ class DietitianDetailPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
-              child: CircleAvatar(
+              child: UserAvatar(
+                name: dietitian['name'],
+                imageUrl: dietitian['profile_image_url'],
+                hasCustomImage: dietitian['profile_image_url'] != null,
                 radius: 60,
-                backgroundColor: const Color(0xFF4CAF50),
-                child: Text(
-                  (dietitian['name'] ?? 'D')[0].toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                profileType: 'dieteticienne',
               ),
             ),
             const SizedBox(height: 24),
 
-            // Bouton Envoyer un email
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: dietitian['email'] != null ? _sendEmail : null,
-                icon: const Icon(Icons.email, color: Colors.white),
-                label: const Text(
-                  'Envoyer un email',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+            // Boutons d'action
+            Row(
+              children: [
+                // Bouton Envoyer un email
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: dietitian['email'] != null ? _sendEmail : null,
+                    icon: const Icon(Icons.email, color: Colors.white),
+                    label: const Text(
+                      'Email',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4CAF50),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4CAF50),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                const SizedBox(width: 12),
+                // Bouton Envoyer un message
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _sendMessage(context),
+                    icon: const Icon(Icons.message, color: Colors.white),
+                    label: const Text(
+                      'Message',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF9B5CFF),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
             const SizedBox(height: 24),
 

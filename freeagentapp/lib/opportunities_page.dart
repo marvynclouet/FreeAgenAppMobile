@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'services/opportunity_service.dart';
 import 'services/auth_service.dart';
+import 'services/subscription_service.dart';
+import 'utils/premium_messages.dart';
+import 'utils/blur_widget.dart';
+import 'utils/premium_navigation.dart';
+import 'widgets/user_avatar.dart';
 
 class OpportunitiesPage extends StatefulWidget {
   const OpportunitiesPage({Key? key}) : super(key: key);
@@ -12,6 +17,7 @@ class OpportunitiesPage extends StatefulWidget {
 class _OpportunitiesPageState extends State<OpportunitiesPage> {
   final OpportunityService _opportunityService = OpportunityService();
   final AuthService _authService = AuthService();
+  final SubscriptionService _subscriptionService = SubscriptionService();
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _opportunities = [];
   List<Map<String, dynamic>> _filteredOpportunities = [];
@@ -19,6 +25,8 @@ class _OpportunitiesPageState extends State<OpportunitiesPage> {
   Map<String, dynamic>? _userData;
   String _selectedFilter = 'all';
   bool _showMyOpportunities = false;
+  bool _isPremium = false;
+  SubscriptionStatus? _subscriptionStatus;
 
   @override
   void initState() {
@@ -36,9 +44,14 @@ class _OpportunitiesPageState extends State<OpportunitiesPage> {
   Future<void> _loadData() async {
     try {
       final userData = await _authService.getUserData();
+      final subscriptionStatus =
+          await _subscriptionService.getSubscriptionStatus();
       final opportunities = await _opportunityService.getOpportunities();
+
       setState(() {
         _userData = userData;
+        _subscriptionStatus = subscriptionStatus;
+        _isPremium = subscriptionStatus.isPremium;
         _opportunities = opportunities;
         _isLoading = false;
       });
@@ -92,6 +105,30 @@ class _OpportunitiesPageState extends State<OpportunitiesPage> {
         ),
       ),
     );
+  }
+
+  void _navigateToSubscription() {
+    PremiumNavigation.navigateToSubscription(context);
+  }
+
+  // Vérifier si une opportunité correspond au profil de l'utilisateur
+  bool _isOpportunityMatchingProfile(Map<String, dynamic> opportunity) {
+    if (_userData == null) return false;
+
+    final userProfileType = _userData!['profile_type'];
+    final opportunityType = opportunity['type'];
+
+    switch (userProfileType) {
+      case 'player':
+        return opportunityType == 'equipe_recherche_joueur';
+      case 'coach':
+        return opportunityType == 'equipe_recherche_coach';
+      case 'team':
+        return opportunityType == 'joueur_recherche_equipe' ||
+            opportunityType == 'coach_recherche_equipe';
+      default:
+        return false;
+    }
   }
 
   @override
@@ -196,16 +233,25 @@ class _OpportunitiesPageState extends State<OpportunitiesPage> {
                           'Équipe → Coach',
                           'equipe_recherche_coach',
                           _selectedFilter == 'equipe_recherche_coach'),
-                      _buildFilterChip('Services Pro', 'service_professionnel',
+                      _buildFilterChip('Services', 'service_professionnel',
                           _selectedFilter == 'service_professionnel'),
                     ],
                   ),
                 ),
                 const SizedBox(height: 16),
 
-                // Toggle mes annonces
+                // Toggle pour mes annonces
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    const Text(
+                      'Mes annonces',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     Switch(
                       value: _showMyOpportunities,
                       onChanged: (value) {
@@ -215,110 +261,124 @@ class _OpportunitiesPageState extends State<OpportunitiesPage> {
                         _filterOpportunities();
                       },
                       activeColor: const Color(0xFF9B5CFF),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Mes annonces uniquement',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                      inactiveThumbColor: Colors.grey,
+                      inactiveTrackColor: Colors.grey.withOpacity(0.3),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
 
-                // Liste des annonces
-                if (_isLoading)
-                  const Expanded(
-                    child: Center(
-                      child:
-                          CircularProgressIndicator(color: Color(0xFF9B5CFF)),
-                    ),
-                  )
-                else if (_filteredOpportunities.isEmpty)
-                  Expanded(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.work_off_outlined,
-                            size: 64,
-                            color: Colors.white38,
+                // Liste des opportunités
+                Expanded(
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF9B5CFF),
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            _searchController.text.isNotEmpty ||
-                                    _selectedFilter != 'all' ||
-                                    _showMyOpportunities
-                                ? 'Aucune annonce trouvée'
-                                : 'Aucune annonce disponible',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Soyez le premier à publier !',
-                            style:
-                                TextStyle(color: Colors.white38, fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: _filteredOpportunities.length,
-                      itemBuilder: (context, index) {
-                        final opportunity = _filteredOpportunities[index];
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => OpportunityDetailPage(
-                                  opportunity: opportunity,
-                                  isOwner: opportunity['user_id'] ==
-                                      _userData?['id'],
-                                  onUpdate: _loadData,
-                                ),
-                              ),
-                            );
-                          },
-                          child: OpportunityCard(
-                            title: opportunity['title'],
-                            details: opportunity['description'],
-                            publisher: opportunity['user_name'],
-                            type: opportunity['type'],
-                            requirements: opportunity['requirements'],
-                            salaryRange: opportunity['salary_range'],
-                            location: opportunity['location'],
-                            createdAt: opportunity['created_at'],
-                            onClose: opportunity['user_id'] == _userData?['id']
-                                ? () async {
-                                    try {
-                                      await _opportunityService
-                                          .closeOpportunity(opportunity['id']);
-                                      _loadData();
-                                    } catch (e) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(content: Text('Erreur: $e')),
-                                      );
-                                    }
-                                  }
-                                : null,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                        )
+                      : _filteredOpportunities.isEmpty
+                          ? _buildEmptyState()
+                          : _buildOpportunitiesList(),
+                ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildOpportunitiesList() {
+    return ListView.builder(
+      itemCount: _filteredOpportunities.length,
+      itemBuilder: (context, index) {
+        final opportunity = _filteredOpportunities[index];
+        final isMatching = _isOpportunityMatchingProfile(opportunity);
+
+        // Si l'utilisateur n'est pas premium et que l'opportunité correspond à son profil
+        if (!_isPremium && isMatching) {
+          return BlurListItem(
+            child: _buildOpportunityCard(opportunity),
+            message:
+                "Voici les annonces qui correspondent à ton profil.\nPour postuler, abonne-toi !",
+            buttonText: "Voir Premium",
+            height: 180,
+          );
+        }
+
+        return _buildOpportunityCard(opportunity);
+      },
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.work_off_outlined,
+            size: 64,
+            color: Colors.white38,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _searchController.text.isNotEmpty ||
+                    _selectedFilter != 'all' ||
+                    _showMyOpportunities
+                ? 'Aucune annonce trouvée'
+                : 'Aucune annonce disponible',
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Soyez le premier à publier !',
+            style: TextStyle(color: Colors.white38, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOpportunityCard(Map<String, dynamic> opportunity) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OpportunityDetailPage(
+              opportunity: opportunity,
+              isOwner: opportunity['user_id'] == _userData?['id'],
+              onUpdate: _loadData,
+            ),
+          ),
+        );
+      },
+      child: OpportunityCard(
+        title: opportunity['title'],
+        details: opportunity['description'],
+        publisher: opportunity['user_name'],
+        type: opportunity['type'],
+        requirements: opportunity['requirements'],
+        salaryRange: opportunity['salary_range'],
+        location: opportunity['location'],
+        createdAt: opportunity['created_at'],
+        onClose: opportunity['user_id'] == _userData?['id']
+            ? () async {
+                try {
+                  await _opportunityService.closeOpportunity(opportunity['id']);
+                  _loadData();
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Erreur: $e')),
+                  );
+                }
+              }
+            : null,
       ),
     );
   }
@@ -1022,17 +1082,12 @@ class OpportunityCard extends StatelessWidget {
                 // Publisher info
                 Row(
                   children: [
-                    CircleAvatar(
-                      backgroundColor: getTypeColor(type),
+                    UserAvatar(
+                      name: publisher,
                       radius: 16,
-                      child: Text(
-                        publisher.isNotEmpty ? publisher[0].toUpperCase() : 'U',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
+                      hasCustomImage: false,
+                      imageUrl: null,
+                      backgroundColor: getTypeColor(type),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -1072,18 +1127,33 @@ class OpportunityDetailPage extends StatefulWidget {
 
 class _OpportunityDetailPageState extends State<OpportunityDetailPage> {
   final OpportunityService _opportunityService = OpportunityService();
+  final SubscriptionService _subscriptionService = SubscriptionService();
+  final AuthService _authService = AuthService();
   final TextEditingController _messageController = TextEditingController();
   List<Map<String, dynamic>> _applications = [];
+  Map<String, dynamic>? _userData;
   bool _isLoading = false;
   bool _hasApplied = false;
 
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     if (widget.isOwner) {
       _loadApplications();
     } else {
       _checkIfApplied();
+    }
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final userData = await _authService.getUserData();
+      setState(() {
+        _userData = userData;
+      });
+    } catch (e) {
+      print('Erreur lors du chargement des données utilisateur: $e');
     }
   }
 
@@ -1127,6 +1197,33 @@ class _OpportunityDetailPageState extends State<OpportunityDetailPage> {
   }
 
   Future<void> _applyToOpportunity() async {
+    // Vérifier le statut premium AVANT toute action
+    try {
+      final subscriptionStatus =
+          await _subscriptionService.getSubscriptionStatus();
+      final isFreemium =
+          subscriptionStatus == null || subscriptionStatus.type == 'free';
+
+      if (isFreemium) {
+        // Afficher le pop-up premium personnalisé selon le profil
+        final userProfileType = _userData?['profile_type'] ?? 'player';
+        PremiumMessages.showPremiumDialog(context, userProfileType, 'apply',
+            onUpgrade: () {
+          Navigator.pushNamed(context, '/premium');
+        });
+        return; // Bloquer la candidature
+      }
+    } catch (e) {
+      print('Erreur lors de la vérification du statut premium: $e');
+      // En cas d'erreur, on affiche le dialog par sécurité
+      PremiumMessages.showPremiumDialog(context, 'player', 'apply',
+          onUpgrade: () {
+        Navigator.pushNamed(context, '/premium');
+      });
+      return;
+    }
+
+    // Vérifier le message seulement si l'utilisateur est premium
     if (_messageController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Veuillez saisir un message')),
@@ -1201,7 +1298,7 @@ class _OpportunityDetailPageState extends State<OpportunityDetailPage> {
         case 'autre':
           return 'Autre';
         default:
-          return type;
+          return type.isNotEmpty ? type : 'Type non spécifié';
       }
     }
 
@@ -1275,11 +1372,12 @@ class _OpportunityDetailPageState extends State<OpportunityDetailPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: getTypeColor(widget.opportunity['type']),
+                color:
+                    getTypeColor(widget.opportunity['type']?.toString() ?? ''),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                getTypeLabel(widget.opportunity['type']),
+                getTypeLabel(widget.opportunity['type']?.toString() ?? ''),
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -1291,7 +1389,7 @@ class _OpportunityDetailPageState extends State<OpportunityDetailPage> {
 
             // Titre
             Text(
-              widget.opportunity['title'],
+              widget.opportunity['title']?.toString() ?? 'Sans titre',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 28,
@@ -1303,23 +1401,18 @@ class _OpportunityDetailPageState extends State<OpportunityDetailPage> {
             // Publié par
             Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: getTypeColor(widget.opportunity['type']),
+                UserAvatar(
+                  name: widget.opportunity['user_name']?.toString() ??
+                      'Utilisateur',
                   radius: 16,
-                  child: Text(
-                    widget.opportunity['user_name']?.isNotEmpty == true
-                        ? widget.opportunity['user_name'][0].toUpperCase()
-                        : 'U',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
+                  hasCustomImage: false,
+                  imageUrl: null,
+                  backgroundColor: getTypeColor(
+                      widget.opportunity['type']?.toString() ?? ''),
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Publié par ${widget.opportunity['user_name']}',
+                  'Publié par ${widget.opportunity['user_name']?.toString() ?? 'Utilisateur'}',
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 16,
@@ -1349,7 +1442,8 @@ class _OpportunityDetailPageState extends State<OpportunityDetailPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    widget.opportunity['description'],
+                    widget.opportunity['description']?.toString() ??
+                        'Aucune description disponible',
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 16,
@@ -1362,7 +1456,10 @@ class _OpportunityDetailPageState extends State<OpportunityDetailPage> {
             const SizedBox(height: 16),
 
             // Prérequis
-            if (widget.opportunity['requirements']?.isNotEmpty == true)
+            if (widget.opportunity['requirements'] != null &&
+                (widget.opportunity['requirements'] is List
+                    ? (widget.opportunity['requirements'] as List).isNotEmpty
+                    : widget.opportunity['requirements'].toString().isNotEmpty))
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -1388,14 +1485,39 @@ class _OpportunityDetailPageState extends State<OpportunityDetailPage> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      widget.opportunity['requirements'],
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                        height: 1.5,
+                    if (widget.opportunity['requirements'] is List) ...[
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: (widget.opportunity['requirements'] as List)
+                            .map<Widget>((req) => Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF9B5CFF)
+                                        .withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    req?.toString() ?? '',
+                                    style: const TextStyle(
+                                      color: Color(0xFF9B5CFF),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ))
+                            .toList(),
                       ),
-                    ),
+                    ] else ...[
+                      Text(
+                        widget.opportunity['requirements']?.toString() ?? '',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1523,19 +1645,12 @@ class _OpportunityDetailPageState extends State<OpportunityDetailPage> {
                         children: [
                           Row(
                             children: [
-                              CircleAvatar(
-                                backgroundColor: const Color(0xFF9B5CFF),
+                              UserAvatar(
+                                name: application['user_name'] ?? '',
                                 radius: 20,
-                                child: Text(
-                                  application['user_name']?.isNotEmpty == true
-                                      ? application['user_name'][0]
-                                          .toUpperCase()
-                                      : 'U',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                                hasCustomImage: false,
+                                imageUrl: null,
+                                backgroundColor: const Color(0xFF9B5CFF),
                               ),
                               const SizedBox(width: 12),
                               Expanded(

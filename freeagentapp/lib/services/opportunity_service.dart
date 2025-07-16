@@ -60,8 +60,8 @@ class OpportunityService {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(_tokenKey);
 
-      if (token == null) {
-        throw Exception('Non authentifié');
+      if (token == null || token.isEmpty) {
+        throw Exception('Token invalide');
       }
 
       final response = await http.get(
@@ -73,16 +73,50 @@ class OpportunityService {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        // Mapper les types du backend vers les types de l'app
-        final List<Map<String, dynamic>> mappedData = data.map((item) {
-          final Map<String, dynamic> opportunity = Map.from(item);
+        final dynamic responseBody = json.decode(response.body);
+
+        // Vérifier que la réponse est une liste
+        if (responseBody is! List) {
+          print('Réponse inattendue du serveur: ${responseBody.runtimeType}');
+          return [];
+        }
+
+        final List<dynamic> data = responseBody;
+
+        // Mapper les types du backend vers les types de l'app avec validation
+        final List<Map<String, dynamic>> mappedData =
+            data.where((item) => item is Map<String, dynamic>).map((item) {
+          final Map<String, dynamic> opportunity =
+              Map<String, dynamic>.from(item);
+
+          // Validation des champs essentiels
+          opportunity['id'] = opportunity['id'] ?? 0;
+          opportunity['title'] =
+              opportunity['title']?.toString() ?? 'Titre non défini';
+          opportunity['description'] =
+              opportunity['description']?.toString() ?? '';
+          opportunity['location'] = opportunity['location']?.toString() ?? '';
+          opportunity['salary_range'] =
+              opportunity['salary_range']?.toString() ?? '';
+          opportunity['requirements'] =
+              opportunity['requirements']?.toString() ?? '';
+          opportunity['status'] = opportunity['status']?.toString() ?? 'open';
+          opportunity['created_at'] =
+              opportunity['created_at']?.toString() ?? '';
+
           if (opportunity['type'] != null) {
-            opportunity['type'] = _mapTypeFromBackend(opportunity['type']);
+            opportunity['type'] =
+                _mapTypeFromBackend(opportunity['type'].toString());
+          } else {
+            opportunity['type'] = 'autre';
           }
+
           return opportunity;
         }).toList();
+
         return mappedData;
+      } else if (response.statusCode == 401) {
+        throw Exception('Token invalide');
       } else {
         throw Exception(_handleErrorResponse(response));
       }
