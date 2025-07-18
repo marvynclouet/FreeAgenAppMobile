@@ -91,7 +91,8 @@ router.post('/register', async (req, res) => {
         id: userId,
         name,
         email,
-        profile_type
+        profile_type,
+        is_admin: false
       }
     });
 
@@ -108,7 +109,7 @@ router.post('/login', async (req, res) => {
 
     // Vérifier si l'utilisateur existe
     const [users] = await pool.query(
-      'SELECT * FROM users WHERE email = ?',
+      'SELECT id, name, email, password, profile_type, is_admin FROM users WHERE email = ?',
       [email]
     );
 
@@ -139,7 +140,8 @@ router.post('/login', async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        profile_type: user.profile_type
+        profile_type: user.profile_type,
+        is_admin: user.is_admin || false
       }
     });
   } catch (error) {
@@ -162,7 +164,7 @@ router.get('/validate', async (req, res) => {
     
     // Vérifier si l'utilisateur existe toujours
     const [users] = await pool.query(
-      'SELECT id, name, email, profile_type FROM users WHERE id = ?',
+      'SELECT id, name, email, profile_type, is_admin FROM users WHERE id = ?',
       [decoded.id]
     );
 
