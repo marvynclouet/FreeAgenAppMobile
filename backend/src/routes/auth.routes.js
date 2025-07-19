@@ -2,7 +2,27 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const pool = require('../config/db.config');
+const db = require('../database/db');
+
+// Route de health check publique pour Railway
+router.get('/health', async (req, res) => {
+  try {
+    // Test simple de connexion à la base de données
+    await db.execute('SELECT 1');
+    res.json({ 
+      status: 'OK', 
+      message: 'Backend is running and database is connected',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Health check failed:', error);
+    res.status(500).json({ 
+      status: 'ERROR', 
+      message: 'Database connection failed',
+      error: error.message 
+    });
+  }
+});
 
 // Route d'inscription
 router.post('/register', async (req, res) => {
@@ -15,7 +35,7 @@ router.post('/register', async (req, res) => {
     } = req.body;
 
     // Vérifier si l'email existe déjà
-    const [existingUsers] = await pool.query(
+    const [existingUsers] = await db.execute(
       'SELECT * FROM users WHERE email = ?',
       [email]
     );
@@ -29,7 +49,7 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Insérer l'utilisateur
-    const [result] = await pool.query(
+    const [result] = await db.execute(
       'INSERT INTO users (name, email, password, profile_type) VALUES (?, ?, ?, ?)',
       [name, email, hashedPassword, profile_type]
     );
@@ -39,37 +59,37 @@ router.post('/register', async (req, res) => {
     // Créer le profil spécifique selon le type
     switch (profile_type) {
       case 'handibasket':
-        await pool.query(
+        await db.execute(
           'INSERT INTO handibasket_profiles (user_id) VALUES (?)',
           [userId]
         );
         break;
       case 'coach_pro':
-        await pool.query(
+        await db.execute(
           'INSERT INTO coach_pro_profiles (user_id) VALUES (?)',
           [userId]
         );
         break;
       case 'coach_basket':
-        await pool.query(
+        await db.execute(
           'INSERT INTO coach_basket_profiles (user_id) VALUES (?)',
           [userId]
         );
         break;
       case 'juriste':
-        await pool.query(
+        await db.execute(
           'INSERT INTO juriste_profiles (user_id) VALUES (?)',
           [userId]
         );
         break;
       case 'dieteticienne':
-        await pool.query(
+        await db.execute(
           'INSERT INTO dieteticienne_profiles (user_id) VALUES (?)',
           [userId]
         );
         break;
       case 'club':
-        await pool.query(
+        await db.execute(
           'INSERT INTO club_profiles (user_id) VALUES (?)',
           [userId]
         );
@@ -107,7 +127,7 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     // Vérifier si l'utilisateur existe
-    const [users] = await pool.query(
+    const [users] = await db.execute(
       'SELECT * FROM users WHERE email = ?',
       [email]
     );
@@ -161,7 +181,7 @@ router.get('/validate', async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Vérifier si l'utilisateur existe toujours
-    const [users] = await pool.query(
+    const [users] = await db.execute(
       'SELECT id, name, email, profile_type FROM users WHERE id = ?',
       [decoded.id]
     );
