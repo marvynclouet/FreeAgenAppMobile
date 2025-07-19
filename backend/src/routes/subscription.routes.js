@@ -323,4 +323,11 @@ router.post('/increment-usage', verifyToken, async (req, res) => {
   }
 });
 
+
+// Route racine pour tester
+router.get('/', (req, res) => {
+  res.json({ message: 'subscription API is working' });
+});
+
+
 module.exports = router; 

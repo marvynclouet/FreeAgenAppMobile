@@ -214,4 +214,11 @@ async function activatePremiumSubscription(userId, platform, receipt, productId)
   }
 }
 
+
+// Route racine pour tester
+router.get('/', (req, res) => {
+  res.json({ message: 'store API is working' });
+});
+
+
 module.exports = router; 

@@ -293,4 +293,11 @@ router.delete('/profile-image', authMiddleware, async (req, res) => {
   }
 });
 
+
+// Route racine pour tester
+router.get('/', (req, res) => {
+  res.json({ message: 'upload API is working' });
+});
+
+
 module.exports = router; 

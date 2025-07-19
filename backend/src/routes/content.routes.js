@@ -245,4 +245,11 @@ router.get('/posts/:postId/comments', authMiddleware, async (req, res) => {
   }
 });
 
+
+// Route racine pour tester
+router.get('/', (req, res) => {
+  res.json({ message: 'content API is working' });
+});
+
+
 module.exports = router; 

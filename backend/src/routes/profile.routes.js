@@ -705,4 +705,11 @@ router.put('/handibasket/profile', verifyToken, checkProfileType('handibasket'),
   }
 });
 
+
+// Route racine pour tester
+router.get('/', (req, res) => {
+  res.json({ message: 'profile API is working' });
+});
+
+
 module.exports = router; 
