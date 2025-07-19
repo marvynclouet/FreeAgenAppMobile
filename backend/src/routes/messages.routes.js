@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../database/db');
-const authenticateToken = require('../middleware/auth.middleware');
+const authMiddleware = require('../middleware/auth.middleware');
 const { checkPremiumAccess, checkUsageLimit } = require('../middleware/premium.middleware');
 
 // Obtenir toutes les conversations d'un utilisateur
-router.get('/conversations', authenticateToken, async (req, res) => {
+router.get('/conversations', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     console.log('🔄 Récupération des conversations pour l\'utilisateur:', userId);
@@ -68,7 +68,7 @@ router.get('/conversations', authenticateToken, async (req, res) => {
 });
 
 // Obtenir les messages d'une conversation
-router.get('/conversations/:conversationId/messages', authenticateToken, async (req, res) => {
+router.get('/conversations/:conversationId/messages', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     const conversationId = req.params.conversationId;
@@ -108,7 +108,7 @@ router.get('/conversations/:conversationId/messages', authenticateToken, async (
 });
 
 // Créer une nouvelle conversation/message (pour postuler à une annonce)
-router.post('/conversations', authenticateToken, checkPremiumAccess('messaging'), checkUsageLimit('messages'), async (req, res) => {
+router.post('/conversations', authMiddleware, checkPremiumAccess('messaging'), checkUsageLimit('messages'), async (req, res) => {
   const connection = await db.getConnection();
   
   try {
@@ -170,7 +170,7 @@ router.post('/conversations', authenticateToken, checkPremiumAccess('messaging')
 });
 
 // Envoyer un message dans une conversation existante
-router.post('/conversations/:conversationId/messages', authenticateToken, checkPremiumAccess('messaging'), checkUsageLimit('messages'), async (req, res) => {
+router.post('/conversations/:conversationId/messages', authMiddleware, checkPremiumAccess('messaging'), checkUsageLimit('messages'), async (req, res) => {
   try {
     const userId = req.user.id;
     const conversationId = req.params.conversationId;
@@ -203,12 +203,6 @@ router.post('/conversations/:conversationId/messages', authenticateToken, checkP
       WHERE user_id = ?
     `, [userId]);
     
-    // Mettre à jour la conversation
-    await db.execute(
-      'UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [conversationId]
-    );
-    
     res.json({ 
       success: true, 
       messageId: result.insertId,
@@ -221,7 +215,7 @@ router.post('/conversations/:conversationId/messages', authenticateToken, checkP
 });
 
 // Marquer une conversation comme lue
-router.put('/conversations/:conversationId/read', authenticateToken, async (req, res) => {
+router.put('/conversations/:conversationId/read', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     const conversationId = req.params.conversationId;
@@ -231,34 +225,30 @@ router.put('/conversations/:conversationId/read', authenticateToken, async (req,
       [conversationId, userId]
     );
     
-    res.json({ success: true });
+    res.json({ success: true, message: 'Messages marqués comme lus' });
   } catch (error) {
-    console.error('Erreur lors du marquage comme lu:', error);
+    console.error('Erreur lors du marquage des messages:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
-// Récupérer le nombre total de messages non lus
-router.get('/unread-count', authenticateToken, async (req, res) => {
+// Obtenir le nombre de messages non lus
+router.get('/unread-count', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     
-    const query = `
+    const [result] = await db.execute(`
       SELECT COUNT(*) as unread_count
       FROM messages m
       JOIN conversations c ON m.conversation_id = c.id
-      WHERE (c.sender_id = ? OR c.receiver_id = ?)
-      AND m.sender_id != ?
-      AND m.is_read = FALSE
-      AND c.is_active = TRUE
-    `;
+      WHERE (c.sender_id = ? OR c.receiver_id = ?) 
+        AND m.sender_id != ? 
+        AND m.is_read = FALSE
+    `, [userId, userId, userId]);
     
-    const [result] = await db.execute(query, [userId, userId, userId]);
-    const unreadCount = result[0]?.unread_count || 0;
-    
-    res.json({ unread_count: unreadCount });
+    res.json({ unread_count: result[0].unread_count });
   } catch (error) {
-    console.error('Erreur lors de la récupération du nombre de messages non lus:', error);
+    console.error('Erreur lors du comptage des messages non lus:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
