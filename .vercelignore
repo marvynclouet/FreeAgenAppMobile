@@ -1,0 +1,37 @@
+# Backend files (not needed for Flutter web deployment)
+backend/
+node_modules/
+*.js
+*.json
+!freeagentapp/pubspec.yaml
+!freeagentapp/pubspec.lock
+!vercel.json
+
+# Flutter build artifacts
+freeagentapp/.dart_tool/
+freeagentapp/build/
+freeagentapp/.flutter-plugins
+freeagentapp/.flutter-plugins-dependencies
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Test files
+test_*.js
+fix_*.js
+*.md
+!README.md
+
+# Railway files
+.railwayignore
+railway.json 

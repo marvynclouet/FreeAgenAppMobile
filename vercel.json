@@ -1,0 +1,83 @@
+{
+  "version": 2,
+  "buildCommand": "cd freeagentapp && flutter build web --release",
+  "outputDirectory": "freeagentapp/build/web",
+  "installCommand": "cd freeagentapp && flutter pub get",
+  "framework": null,
+  "functions": {},
+  "routes": [
+    {
+      "src": "/flutter_bootstrap.js",
+      "dest": "/flutter_bootstrap.js"
+    },
+    {
+      "src": "/main.dart.js",
+      "dest": "/main.dart.js"
+    },
+    {
+      "src": "/flutter.js",
+      "dest": "/flutter.js"
+    },
+    {
+      "src": "/flutter_service_worker.js",
+      "dest": "/flutter_service_worker.js"
+    },
+    {
+      "src": "/version.json",
+      "dest": "/version.json"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
+      "src": "/icons/(.*)",
+      "dest": "/icons/$1"
+    },
+    {
+      "src": "/canvaskit/(.*)",
+      "dest": "/canvaskit/$1"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/manifest.json"
+    },
+    {
+      "src": "/favicon.png",
+      "dest": "/favicon.png"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/main.dart.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/flutter_bootstrap.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ]
+} 
