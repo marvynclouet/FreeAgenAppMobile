@@ -1,54 +1,53 @@
 {
   "version": 2,
-  "buildCommand": "cd freeagentapp && flutter build web --release",
-  "outputDirectory": "freeagentapp/build/web",
-  "installCommand": "cd freeagentapp && flutter pub get",
+  "buildCommand": "chmod +x build.sh && ./build.sh",
+  "outputDirectory": "web",
+  "installCommand": "echo 'Install completed'",
   "framework": null,
-  "functions": {},
-  "routes": [
+  "rewrites": [
     {
-      "src": "/flutter_bootstrap.js",
-      "dest": "/flutter_bootstrap.js"
+      "source": "/flutter_bootstrap.js",
+      "destination": "/flutter_bootstrap.js"
     },
     {
-      "src": "/main.dart.js",
-      "dest": "/main.dart.js"
+      "source": "/main.dart.js",
+      "destination": "/main.dart.js"
     },
     {
-      "src": "/flutter.js",
-      "dest": "/flutter.js"
+      "source": "/flutter.js",
+      "destination": "/flutter.js"
     },
     {
-      "src": "/flutter_service_worker.js",
-      "dest": "/flutter_service_worker.js"
+      "source": "/flutter_service_worker.js",
+      "destination": "/flutter_service_worker.js"
     },
     {
-      "src": "/version.json",
-      "dest": "/version.json"
+      "source": "/version.json",
+      "destination": "/version.json"
     },
     {
-      "src": "/assets/(.*)",
-      "dest": "/assets/$1"
+      "source": "/assets/(.*)",
+      "destination": "/assets/$1"
     },
     {
-      "src": "/icons/(.*)",
-      "dest": "/icons/$1"
+      "source": "/icons/(.*)",
+      "destination": "/icons/$1"
     },
     {
-      "src": "/canvaskit/(.*)",
-      "dest": "/canvaskit/$1"
+      "source": "/canvaskit/(.*)",
+      "destination": "/canvaskit/$1"
     },
     {
-      "src": "/manifest.json",
-      "dest": "/manifest.json"
+      "source": "/manifest.json",
+      "destination": "/manifest.json"
     },
     {
-      "src": "/favicon.png",
-      "dest": "/favicon.png"
+      "source": "/favicon.png",
+      "destination": "/favicon.png"
     },
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
