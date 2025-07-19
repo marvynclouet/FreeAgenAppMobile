@@ -4,6 +4,11 @@ const db = require('../database/db');
 const authMiddleware = require('../middleware/auth.middleware');
 const { checkPremiumAccess, checkUsageLimit } = require('../middleware/premium.middleware');
 
+// Route racine pour tester
+router.get('/', (req, res) => {
+  res.json({ message: 'Messages API is working' });
+});
+
 // Obtenir toutes les conversations d'un utilisateur
 router.get('/conversations', authMiddleware, async (req, res) => {
   try {
