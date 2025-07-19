@@ -4,7 +4,8 @@ import 'auth_service.dart';
 import 'dart:io';
 
 class ContentService {
-  static const String baseUrl = 'http://localhost:3000/api';
+  static const String baseUrl =
+      'https://freeagenappmobile-production.up.railway.app/api';
   final AuthService _authService = AuthService();
 
   // Récupérer le fil d'actualités (posts + opportunités)

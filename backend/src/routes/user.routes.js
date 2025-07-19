@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/db.config');
+const db = require('../database/db');
 const verifyToken = require('../middleware/auth.middleware');
 
 // Obtenir le profil de l'utilisateur connecté
 router.get('/profile', verifyToken, async (req, res) => {
   try {
-    const [users] = await db.query(
+    const [users] = await db.execute(
       'SELECT id, name, email, profile_type, profile_image_url, created_at FROM users WHERE id = ?',
       [req.user.id]
     );
@@ -29,7 +29,7 @@ router.put('/profile', verifyToken, async (req, res) => {
 
     // Vérifier si l'email est déjà utilisé par un autre utilisateur
     if (email) {
-      const [existingUsers] = await db.query(
+      const [existingUsers] = await db.execute(
         'SELECT id FROM users WHERE email = ? AND id != ?',
         [email, req.user.id]
       );
@@ -40,7 +40,7 @@ router.put('/profile', verifyToken, async (req, res) => {
     }
 
     // Mettre à jour le profil
-    await db.query(
+    await db.execute(
       'UPDATE users SET name = ?, email = ? WHERE id = ?',
       [name, email, req.user.id]
     );
@@ -57,7 +57,7 @@ router.get('/', verifyToken, async (req, res) => {
   try {
     const currentUserId = req.user.id;
     
-    const [users] = await db.query(
+    const [users] = await db.execute(
       `SELECT id, first_name, last_name, email, profile_type, profile_image_url 
        FROM users 
        WHERE id != ? 
@@ -88,7 +88,7 @@ router.get('/search', verifyToken, async (req, res) => {
   }
 
   try {
-    const [users] = await db.query(sql, params);
+    const [users] = await db.execute(sql, params);
     res.json(users);
   } catch (error) {
     console.error('Erreur lors de la recherche des utilisateurs:', error);

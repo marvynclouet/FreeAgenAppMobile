@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/db.config');
+const db = require('../database/db');
 const authMiddleware = require('../middleware/auth.middleware');
 const { checkPremiumAccess, checkUsageLimit, incrementUsage } = require('../middleware/premium.middleware');
 
@@ -17,7 +17,7 @@ router.get('/', authMiddleware, async (req, res) => {
     
     console.log(`Récupération des annonces pour profil: ${userProfileType}, target: ${targetProfile}`);
     
-    const [annonces] = await db.query(`
+    const [annonces] = await db.execute(`
       SELECT a.*, u.name as user_name, u.profile_type
       FROM annonces a
       JOIN users u ON a.user_id = u.id
@@ -37,7 +37,7 @@ router.get('/', authMiddleware, async (req, res) => {
 // Obtenir une annonce spécifique
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
-    const [annonces] = await db.query(`
+    const [annonces] = await db.execute(`
       SELECT a.*, u.name as user_name, u.profile_type
       FROM annonces a
       JOIN users u ON a.user_id = u.id
@@ -93,7 +93,7 @@ router.post('/', authMiddleware, checkPremiumAccess('post_opportunities'), check
     }
 
     console.log('Tentative d\'insertion dans la base de données');
-    const [result] = await db.query(
+    const [result] = await db.execute(
       `INSERT INTO annonces (user_id, title, description, type, requirements, salary_range, location, target_profile)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [userId, title, description, type, requirements, salary_range, location, targetProfile]
@@ -101,7 +101,7 @@ router.post('/', authMiddleware, checkPremiumAccess('post_opportunities'), check
 
     console.log('Résultat de l\'insertion:', result);
 
-    const [newAnnonce] = await db.query(
+    const [newAnnonce] = await db.execute(
       `SELECT a.*, u.name as user_name, u.profile_type
        FROM annonces a
        JOIN users u ON a.user_id = u.id
@@ -112,7 +112,7 @@ router.post('/', authMiddleware, checkPremiumAccess('post_opportunities'), check
     console.log('Nouvelle annonce créée:', newAnnonce[0]);
 
     // Incrémenter le compteur d'opportunités
-    await db.query(`
+    await db.execute(`
       UPDATE user_limits 
       SET opportunities_posted = opportunities_posted + 1 
       WHERE user_id = ?
@@ -133,7 +133,7 @@ router.post('/', authMiddleware, checkPremiumAccess('post_opportunities'), check
 // Fermer une annonce
 router.put('/:id/close', authMiddleware, async (req, res) => {
   try {
-    const [annonce] = await db.query(
+    const [annonce] = await db.execute(
       'SELECT * FROM annonces WHERE id = ?',
       [req.params.id]
     );
@@ -147,7 +147,7 @@ router.put('/:id/close', authMiddleware, async (req, res) => {
       return res.status(403).json({ message: 'Non autorisé' });
     }
 
-    await db.query(
+    await db.execute(
       'UPDATE annonces SET status = ? WHERE id = ?',
       ['closed', req.params.id]
     );
@@ -171,7 +171,7 @@ router.post('/:id/apply', authMiddleware, checkUsageLimit('applications'), async
     const annonceId = req.params.id;
 
     // Récupérer l'annonce et son auteur
-    const [annonce] = await connection.query(
+    const [annonce] = await connection.execute(
       'SELECT * FROM annonces WHERE id = ?',
       [annonceId]
     );
@@ -188,7 +188,7 @@ router.post('/:id/apply', authMiddleware, checkUsageLimit('applications'), async
     }
 
     // Vérifier si l'utilisateur a déjà postulé (chercher une conversation existante)
-    const [existingConv] = await connection.query(
+    const [existingConv] = await connection.execute(
       'SELECT * FROM conversations WHERE opportunity_id = ? AND sender_id = ? AND receiver_id = ?',
       [annonceId, userId, receiverId]
     );
@@ -198,26 +198,26 @@ router.post('/:id/apply', authMiddleware, checkUsageLimit('applications'), async
     }
 
     // Créer une conversation
-    const [convResult] = await connection.query(
+    const [convResult] = await connection.execute(
       'INSERT INTO conversations (opportunity_id, sender_id, receiver_id, subject) VALUES (?, ?, ?, ?)',
       [annonceId, userId, receiverId, `Candidature: ${annonce[0].title}`]
     );
     const conversationId = convResult.insertId;
 
     // Créer le message de candidature
-    await connection.query(
+    await connection.execute(
       'INSERT INTO messages (conversation_id, sender_id, content, message_type) VALUES (?, ?, ?, ?)',
       [conversationId, userId, message, 'application']
     );
 
     // Créer aussi l'enregistrement dans applications pour compatibilité
-    await connection.query(
+    await connection.execute(
       'INSERT INTO applications (user_id, opportunity_id, message) VALUES (?, ?, ?)',
       [userId, annonceId, message]
     );
 
     // Incrémenter le compteur d'applications
-    await connection.query(`
+    await connection.execute(`
       UPDATE user_limits 
       SET applications_count = applications_count + 1 
       WHERE user_id = ?

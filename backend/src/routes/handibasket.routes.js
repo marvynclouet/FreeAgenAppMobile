@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../config/db.config');
+const db = require('../database/db');
 const authMiddleware = require('../middleware/auth.middleware');
 
 // Récupérer tous les joueurs handibasket
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    const [rows] = await db.execute(`
       SELECT 
         u.id,
         u.name,
@@ -39,7 +39,7 @@ router.get('/profile', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     
-    const [rows] = await pool.query(`
+    const [rows] = await db.execute(`
       SELECT * FROM handibasket_profiles WHERE user_id = ?
     `, [userId]);
 
@@ -69,14 +69,14 @@ router.put('/profile', authMiddleware, async (req, res) => {
     } = req.body;
 
     // Vérifier si le profil existe déjà
-    const [existingProfile] = await pool.query(
+    const [existingProfile] = await db.execute(
       'SELECT * FROM handibasket_profiles WHERE user_id = ?',
       [userId]
     );
 
     if (existingProfile.length > 0) {
       // Mettre à jour le profil existant
-      await pool.query(`
+      await db.execute(`
         UPDATE handibasket_profiles 
         SET birth_date = ?, handicap_type = ?, cat = ?, residence = ?, 
             club = ?, coach = ?, profession = ?, updated_at = CURRENT_TIMESTAMP
@@ -84,7 +84,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
       `, [birth_date, handicap_type, cat, residence, club, coach, profession, userId]);
     } else {
       // Créer un nouveau profil
-      await pool.query(`
+      await db.execute(`
         INSERT INTO handibasket_profiles 
         (user_id, birth_date, handicap_type, cat, residence, club, coach, profession) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -140,7 +140,7 @@ router.get('/search', authMiddleware, async (req, res) => {
     
     query += ' ORDER BY u.created_at DESC';
     
-    const [rows] = await pool.query(query, params);
+    const [rows] = await db.execute(query, params);
     res.json(rows);
   } catch (error) {
     console.error('Erreur lors de la recherche des joueurs handibasket:', error);
@@ -153,7 +153,7 @@ router.get('/annonces', authMiddleware, async (req, res) => {
   try {
     console.log('Récupération des annonces handibasket...');
     
-    const [annonces] = await pool.query(`
+    const [annonces] = await db.execute(`
       SELECT a.*, u.name as user_name, u.profile_type
       FROM annonces a
       JOIN users u ON a.user_id = u.id
@@ -185,13 +185,13 @@ router.post('/annonces', authMiddleware, async (req, res) => {
       });
     }
 
-    const [result] = await pool.query(
+    const [result] = await db.execute(
       `INSERT INTO annonces (user_id, title, description, type, requirements, salary_range, location, target_profile)
        VALUES (?, ?, ?, ?, ?, ?, ?, 'handibasket')`,
       [userId, title, description, type, requirements, salary_range, location]
     );
 
-    const [newAnnonce] = await pool.query(
+    const [newAnnonce] = await db.execute(
       `SELECT a.*, u.name as user_name, u.profile_type
        FROM annonces a
        JOIN users u ON a.user_id = u.id

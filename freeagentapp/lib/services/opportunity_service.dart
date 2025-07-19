@@ -13,7 +13,8 @@ enum OpportunityType {
 }
 
 class OpportunityService {
-  static const String _baseUrl = 'http://192.168.1.43:3000/api';
+  static const String _baseUrl =
+      'https://freeagenappmobile-production.up.railway.app/api';
   static const String _tokenKey = 'auth_token';
 
   String _mapTypeForBackend(OpportunityType type) {

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/db.config');
+const db = require('../database/db');
 const verifyToken = require('../middleware/auth.middleware');
 
 // Middleware pour vérifier le type de profil
@@ -18,7 +18,7 @@ const checkProfileType = (profileType) => {
 // Route pour récupérer le profil d'un joueur
 router.get('/player/profile', verifyToken, checkProfileType('player'), async (req, res) => {
   try {
-    const [rows] = await db.query(
+    const [rows] = await db.execute(
       `SELECT p.*, u.name, u.email, u.gender, u.nationality, u.profile_image_url 
        FROM player_profiles p 
        JOIN users u ON p.user_id = u.id 
@@ -150,7 +150,7 @@ router.put('/player/profile', verifyToken, checkProfileType('player'), async (re
 // Route pour récupérer le profil d'un joueur handibasket
 router.get('/handibasket/profile', verifyToken, checkProfileType('handibasket'), async (req, res) => {
   try {
-    const [rows] = await db.query(
+    const [rows] = await db.execute(
       `SELECT p.*, u.name, u.email, u.gender, u.nationality 
        FROM handibasket_profiles p 
        JOIN users u ON p.user_id = u.id 
@@ -286,7 +286,7 @@ router.put('/handibasket/profile', verifyToken, checkProfileType('handibasket'),
 // Route pour récupérer le profil d'un club
 router.get('/club/profile', verifyToken, checkProfileType('club'), async (req, res) => {
   try {
-    const [rows] = await db.query(
+    const [rows] = await db.execute(
       'SELECT c.*, u.name, u.email FROM club_profiles c JOIN users u ON c.user_id = u.id WHERE c.user_id = ?',
       [req.user.id]
     );
@@ -316,13 +316,13 @@ router.put('/club/profile', verifyToken, checkProfileType('club'), async (req, r
       social_media
     } = req.body;
 
-    const [existingProfile] = await db.query(
+    const [existingProfile] = await db.execute(
       'SELECT id FROM club_profiles WHERE user_id = ?',
       [req.user.id]
     );
 
     if (existingProfile.length === 0) {
-      await db.query(
+      await db.execute(
         `INSERT INTO club_profiles (
           user_id, club_name, address, city, level,
           description, phone, website, social_media
@@ -340,7 +340,7 @@ router.put('/club/profile', verifyToken, checkProfileType('club'), async (req, r
         ]
       );
     } else {
-      await db.query(
+      await db.execute(
         `UPDATE club_profiles SET
           club_name = ?,
           address = ?,
@@ -375,7 +375,7 @@ router.put('/club/profile', verifyToken, checkProfileType('club'), async (req, r
 // Route pour récupérer le profil d'un coach pro
 router.get('/coach_pro/profile', verifyToken, checkProfileType('coach_pro'), async (req, res) => {
   try {
-    const [rows] = await db.query(
+    const [rows] = await db.execute(
       'SELECT c.*, u.name, u.email FROM coach_pro_profiles c JOIN users u ON c.user_id = u.id WHERE c.user_id = ?',
       [req.user.id]
     );
@@ -403,13 +403,13 @@ router.put('/coach_pro/profile', verifyToken, checkProfileType('coach_pro'), asy
       availability
     } = req.body;
 
-    const [existingProfile] = await db.query(
+    const [existingProfile] = await db.execute(
       'SELECT id FROM coach_pro_profiles WHERE user_id = ?',
       [req.user.id]
     );
 
     if (existingProfile.length === 0) {
-      await db.query(
+      await db.execute(
         `INSERT INTO coach_pro_profiles (
           user_id, speciality, experience_years, certifications,
           hourly_rate, services, availability
@@ -425,7 +425,7 @@ router.put('/coach_pro/profile', verifyToken, checkProfileType('coach_pro'), asy
         ]
       );
     } else {
-      await db.query(
+      await db.execute(
         `UPDATE coach_pro_profiles SET
           speciality = ?,
           experience_years = ?,
@@ -456,7 +456,7 @@ router.put('/coach_pro/profile', verifyToken, checkProfileType('coach_pro'), asy
 // Route pour récupérer le profil d'un juriste
 router.get('/juriste/profile', verifyToken, checkProfileType('juriste'), async (req, res) => {
   try {
-    const [rows] = await db.query(
+    const [rows] = await db.execute(
       'SELECT j.*, u.name, u.email, u.profile_image_url FROM juriste_profiles j JOIN users u ON j.user_id = u.id WHERE j.user_id = ?',
       [req.user.id]
     );
@@ -484,13 +484,13 @@ router.put('/juriste/profile', verifyToken, checkProfileType('juriste'), async (
       availability
     } = req.body;
 
-    const [existingProfile] = await db.query(
+    const [existingProfile] = await db.execute(
       'SELECT id FROM juriste_profiles WHERE user_id = ?',
       [req.user.id]
     );
 
     if (existingProfile.length === 0) {
-      await db.query(
+      await db.execute(
         `INSERT INTO juriste_profiles (
           user_id, speciality, bar_number, experience_years,
           hourly_rate, services, availability
@@ -506,7 +506,7 @@ router.put('/juriste/profile', verifyToken, checkProfileType('juriste'), async (
         ]
       );
     } else {
-      await db.query(
+      await db.execute(
         `UPDATE juriste_profiles SET
           speciality = ?,
           bar_number = ?,
@@ -537,7 +537,7 @@ router.put('/juriste/profile', verifyToken, checkProfileType('juriste'), async (
 // Route pour récupérer le profil d'une diététicienne
 router.get('/dieteticienne/profile', verifyToken, checkProfileType('dieteticienne'), async (req, res) => {
   try {
-    const [rows] = await db.query(
+    const [rows] = await db.execute(
       'SELECT d.*, u.name, u.email, u.profile_image_url FROM dieteticienne_profiles d JOIN users u ON d.user_id = u.id WHERE d.user_id = ?',
       [req.user.id]
     );
@@ -566,14 +566,14 @@ router.put('/dieteticienne/profile', verifyToken, checkProfileType('dieteticienn
     } = req.body;
 
     // Vérifier si le profil existe déjà ET s'il a des données valides
-    const [existingProfile] = await db.query(
+    const [existingProfile] = await db.execute(
       'SELECT id, speciality FROM dieteticienne_profiles WHERE user_id = ?',
       [req.user.id]
     );
 
     if (existingProfile.length === 0) {
       // Créer un nouveau profil
-      await db.query(
+      await db.execute(
         `INSERT INTO dieteticienne_profiles (
           user_id, speciality, experience_years, certifications,
           hourly_rate, services, availability
@@ -590,7 +590,7 @@ router.put('/dieteticienne/profile', verifyToken, checkProfileType('dieteticienn
       );
     } else {
       // Mettre à jour le profil existant
-      await db.query(
+      await db.execute(
         `UPDATE dieteticienne_profiles SET
           speciality = ?,
           experience_years = ?,
@@ -621,7 +621,7 @@ router.put('/dieteticienne/profile', verifyToken, checkProfileType('dieteticienn
 // Route pour récupérer le profil d'un joueur handibasket
 router.get('/handibasket/profile', verifyToken, checkProfileType('handibasket'), async (req, res) => {
   try {
-    const [rows] = await db.query(
+    const [rows] = await db.execute(
       'SELECT h.*, u.name, u.email, u.profile_image_url FROM handibasket_profiles h JOIN users u ON h.user_id = u.id WHERE h.user_id = ?',
       [req.user.id]
     );
@@ -650,14 +650,14 @@ router.put('/handibasket/profile', verifyToken, checkProfileType('handibasket'),
       profession
     } = req.body;
 
-    const [existingProfile] = await db.query(
+    const [existingProfile] = await db.execute(
       'SELECT id FROM handibasket_profiles WHERE user_id = ?',
       [req.user.id]
     );
 
     if (existingProfile.length === 0) {
       // Créer un nouveau profil
-      await db.query(
+      await db.execute(
         `INSERT INTO handibasket_profiles (
           user_id, birth_date, handicap_type, cat, residence,
           club, coach, profession
@@ -675,7 +675,7 @@ router.put('/handibasket/profile', verifyToken, checkProfileType('handibasket'),
       );
     } else {
       // Mettre à jour le profil existant
-      await db.query(
+      await db.execute(
         `UPDATE handibasket_profiles SET
           birth_date = ?,
           handicap_type = ?,
