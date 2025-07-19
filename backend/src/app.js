@@ -23,6 +23,7 @@ const clubsRoutes = require('./routes/clubs.routes');
 const coachesRoutes = require('./routes/coaches.routes');
 const annoncesRoutes = require('./routes/annonces.routes');
 const messagesRoutes = require('./routes/messages.routes');
+const opportunityRoutes = require('./routes/opportunity.routes');
 const handibasketRoutes = require('./routes/handibasket.routes');
 const subscriptionRoutes = require('./routes/subscription.routes');
 // const paymentRoutes = require('./routes/payment.routes'); // Désactivé temporairement
@@ -40,6 +41,7 @@ app.use('/api/clubs', clubsRoutes);
 app.use('/api/coaches', coachesRoutes);
 app.use('/api/annonces', annoncesRoutes);
 app.use('/api/messages', messagesRoutes);
+app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/handibasket', handibasketRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 // app.use('/api/payments', paymentRoutes); // Désactivé temporairement

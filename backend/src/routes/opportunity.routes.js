@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/db.config');
+const db = require('../database/db');
 const authMiddleware = require('../middleware/auth.middleware');
 
 // Récupérer toutes les opportunités (depuis annonces)
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const [opportunities] = await db.query(`
+    const [opportunities] = await db.execute(`
       SELECT a.*, u.name as user_name, u.email as user_email
       FROM annonces a
       JOIN users u ON a.user_id = u.id
@@ -23,7 +23,7 @@ router.get('/', authMiddleware, async (req, res) => {
 // Obtenir une opportunité spécifique
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
-    const [opportunities] = await db.query(`
+    const [opportunities] = await db.execute(`
       SELECT o.*, t.name as team_name, t.city as team_city
       FROM opportunities o
       JOIN teams t ON o.team_id = t.id
@@ -60,7 +60,7 @@ router.post('/', authMiddleware, async (req, res) => {
     });
 
     // Vérifier si l'utilisateur est un club
-    const [user] = await db.query(
+    const [user] = await db.execute(
       'SELECT profile_type FROM users WHERE id = ?',
       [userId]
     );
@@ -73,7 +73,7 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 
     // Vérifier si l'équipe existe
-    const [team] = await db.query(
+    const [team] = await db.execute(
       'SELECT id FROM teams WHERE id = ?',
       [team_id]
     );
@@ -95,7 +95,7 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 
     console.log('Tentative d\'insertion dans la base de données');
-    const [result] = await db.query(
+    const [result] = await db.execute(
       `INSERT INTO opportunities (team_id, title, description, type, requirements, salary_range, location)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [team_id, title, description, type, requirements, salary_range, location]
@@ -103,7 +103,7 @@ router.post('/', authMiddleware, async (req, res) => {
 
     console.log('Résultat de l\'insertion:', result);
 
-    const [newOpportunity] = await db.query(
+    const [newOpportunity] = await db.execute(
       `SELECT o.*, t.name as team_name, t.city as team_city
        FROM opportunities o
        JOIN teams t ON o.team_id = t.id
@@ -130,7 +130,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
   try {
     const { title, description, team_id, position, requirements, salary_range, location } = req.body;
 
-    await db.query(
+    await db.execute(
       `UPDATE opportunities 
       SET title = ?, description = ?, team_id = ?, position = ?, 
           requirements = ?, salary_range = ?, location = ?
@@ -148,7 +148,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
 // Supprimer une opportunité
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
-    await db.query('DELETE FROM opportunities WHERE id = ?', [req.params.id]);
+    await db.execute('DELETE FROM opportunities WHERE id = ?', [req.params.id]);
     res.json({ message: 'Opportunité supprimée avec succès' });
   } catch (error) {
     console.error('Erreur lors de la suppression de l\'opportunité:', error);
@@ -166,7 +166,7 @@ router.post('/:id/apply', authMiddleware, async (req, res) => {
     console.log('Tentative de candidature:', { userId, annonceId, message });
 
     // Vérifier que l'annonce existe
-    const [annonce] = await db.query(
+    const [annonce] = await db.execute(
       'SELECT * FROM annonces WHERE id = ? AND status = "open"',
       [annonceId]
     );
@@ -179,7 +179,7 @@ router.post('/:id/apply', authMiddleware, async (req, res) => {
 
     // Vérifier si une conversation existe déjà
     let conversationId;
-    const [existingConv] = await db.query(
+    const [existingConv] = await db.execute(
       'SELECT id FROM conversations WHERE opportunity_id = ? AND sender_id = ? AND receiver_id = ?',
       [annonceId, userId, receiverId]
     );
@@ -188,7 +188,7 @@ router.post('/:id/apply', authMiddleware, async (req, res) => {
       conversationId = existingConv[0].id;
     } else {
       // Créer une nouvelle conversation
-      const [convResult] = await db.query(
+      const [convResult] = await db.execute(
         'INSERT INTO conversations (opportunity_id, sender_id, receiver_id, subject) VALUES (?, ?, ?, ?)',
         [annonceId, userId, receiverId, `Candidature: ${annonce[0].title}`]
       );
@@ -196,26 +196,23 @@ router.post('/:id/apply', authMiddleware, async (req, res) => {
     }
 
     // Ajouter le message
-    await db.query(
+    await db.execute(
       'INSERT INTO messages (conversation_id, sender_id, content, message_type) VALUES (?, ?, ?, ?)',
       [conversationId, userId, message, 'application']
     );
 
-    res.status(201).json({ 
-      message: 'Candidature envoyée avec succès via messagerie',
-      conversationId 
-    });
+    res.json({ message: 'Candidature envoyée avec succès' });
   } catch (error) {
-    console.error('Erreur lors de la candidature:', error);
+    console.error('Erreur lors de l\'envoi de la candidature:', error);
     res.status(500).json({ message: 'Erreur serveur' });
   }
 });
 
-// Fermer une opportunité
-router.put('/:id/close', authMiddleware, async (req, res) => {
+// Obtenir les candidatures pour une opportunité (pour les clubs)
+router.get('/:id/applications', authMiddleware, async (req, res) => {
   try {
-    const [opportunity] = await db.query(
-      'SELECT o.*, t.id as team_id FROM opportunities o JOIN teams t ON o.team_id = t.id WHERE o.id = ?',
+    const [opportunity] = await db.execute(
+      'SELECT * FROM opportunities WHERE id = ?',
       [req.params.id]
     );
 
@@ -223,24 +220,27 @@ router.put('/:id/close', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'Opportunité non trouvée' });
     }
 
-    // Vérifier si l'utilisateur est le propriétaire de l'équipe
-    const [user] = await db.query(
+    // Vérifier que l'utilisateur est le propriétaire de l'opportunité
+    const [user] = await db.execute(
       'SELECT profile_type FROM users WHERE id = ?',
       [req.user.id]
     );
 
     if (user[0].profile_type !== 'club') {
-      return res.status(403).json({ message: 'Non autorisé' });
+      return res.status(403).json({ message: 'Accès non autorisé' });
     }
 
-    await db.query(
-      'UPDATE opportunities SET status = ? WHERE id = ?',
-      ['closed', req.params.id]
-    );
+    const [applications] = await db.execute(`
+      SELECT c.*, u.name as applicant_name, u.email as applicant_email
+      FROM conversations c
+      JOIN users u ON c.sender_id = u.id
+      WHERE c.opportunity_id = ?
+      ORDER BY c.created_at DESC
+    `, [req.params.id]);
 
-    res.json({ message: 'Opportunité fermée avec succès' });
+    res.json(applications);
   } catch (error) {
-    console.error('Erreur lors de la fermeture de l\'opportunité:', error);
+    console.error('Erreur lors de la récupération des candidatures:', error);
     res.status(500).json({ message: 'Erreur serveur' });
   }
 });
