@@ -7,9 +7,10 @@ node_modules/
 !freeagentapp/pubspec.lock
 !vercel.json
 
-# Flutter build artifacts
+# Flutter build artifacts (but allow web build)
 freeagentapp/.dart_tool/
 freeagentapp/build/
+!freeagentapp/build/web/
 freeagentapp/.flutter-plugins
 freeagentapp/.flutter-plugins-dependencies
 
