@@ -1,0 +1,7 @@
+freeagentapp/
+test_app/
+*.md
+.git/
+node_modules/
+.env
+*.log 
