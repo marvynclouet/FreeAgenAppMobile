@@ -11,7 +11,17 @@ router.post('/register', async (req, res) => {
       name, 
       email, 
       password, 
-      profile_type
+      profile_type,
+      // Champs spécifiques pour handibasket
+      birth_date,
+      handicap_type,
+      cat,
+      residence,
+      profession,
+      club,
+      coach,
+      position,
+      championship_level
     } = req.body;
 
     // Vérifier si l'email existe déjà
@@ -30,7 +40,7 @@ router.post('/register', async (req, res) => {
 
     // Insérer l'utilisateur
     const [result] = await pool.query(
-      'INSERT INTO users (name, email, password, profile_type) VALUES (?, ?, ?, ?)',
+      'INSERT INTO users (name, email, password, profile_type, subscription_type, is_premium) VALUES (?, ?, ?, ?, "free", FALSE)',
       [name, email, hashedPassword, profile_type]
     );
 
@@ -39,48 +49,92 @@ router.post('/register', async (req, res) => {
     // Créer le profil spécifique selon le type
     switch (profile_type) {
       case 'handibasket':
+        // Vérifier les champs obligatoires pour handibasket
+        if (!birth_date || !handicap_type || !cat || !residence || !profession) {
+          return res.status(400).json({ 
+            message: 'Champs obligatoires manquants pour handibasket: birth_date, handicap_type, cat, residence, profession' 
+          });
+        }
+        
         await pool.query(
-          'INSERT INTO handibasket_profiles (user_id) VALUES (?)',
-          [userId]
+          `INSERT INTO handibasket_profiles (
+            user_id, birth_date, handicap_type, cat, residence, profession, 
+            club, coach, position, championship_level
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            userId, 
+            birth_date, 
+            handicap_type, 
+            cat, 
+            residence, 
+            profession,
+            club || null,
+            coach || null,
+            position || 'polyvalent',
+            championship_level || 'non_specifie'
+          ]
         );
         break;
+        
       case 'coach_pro':
         await pool.query(
           'INSERT INTO coach_pro_profiles (user_id) VALUES (?)',
           [userId]
         );
         break;
+        
       case 'coach_basket':
         await pool.query(
           'INSERT INTO coach_basket_profiles (user_id) VALUES (?)',
           [userId]
         );
         break;
+        
       case 'juriste':
         await pool.query(
           'INSERT INTO juriste_profiles (user_id) VALUES (?)',
           [userId]
         );
         break;
+        
       case 'dieteticienne':
         await pool.query(
           'INSERT INTO dieteticienne_profiles (user_id) VALUES (?)',
           [userId]
         );
         break;
+        
       case 'club':
         await pool.query(
           'INSERT INTO club_profiles (user_id) VALUES (?)',
           [userId]
         );
         break;
+        
+      default:
+        // Pour les autres types de profil, créer un profil générique
+        await pool.query(
+          'INSERT INTO profiles (user_id, profile_type) VALUES (?, ?)',
+          [userId, profile_type]
+        );
+        break;
+    }
+
+    // Créer une entrée dans user_limits pour le nouvel utilisateur
+    try {
+      await pool.query(
+        'INSERT INTO user_limits (user_id, messages_sent, opportunities_posted, emails_viewed) VALUES (?, 0, 0, 0)',
+        [userId]
+      );
+    } catch (limitError) {
+      console.log('Table user_limits non disponible, ignoré');
     }
 
     // Générer le token JWT
     const token = jwt.sign(
       { id: userId, email, profile_type },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' } // Valeur par défaut fixe
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
     );
 
     // Retourner les informations de l'utilisateur
@@ -92,13 +146,17 @@ router.post('/register', async (req, res) => {
         name,
         email,
         profile_type,
-        is_admin: false
+        subscription_type: 'free',
+        is_premium: false
       }
     });
 
   } catch (error) {
     console.error('Erreur lors de l\'inscription:', error);
-    res.status(500).json({ message: 'Erreur serveur lors de l\'inscription' });
+    res.status(500).json({ 
+      message: 'Erreur serveur lors de l\'inscription',
+      details: error.message 
+    });
   }
 });
 
@@ -109,7 +167,7 @@ router.post('/login', async (req, res) => {
 
     // Vérifier si l'utilisateur existe
     const [users] = await pool.query(
-      'SELECT id, name, email, password, profile_type, is_admin FROM users WHERE email = ?',
+      'SELECT * FROM users WHERE email = ?',
       [email]
     );
 
@@ -125,11 +183,25 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
     }
 
+    // Vérifier et mettre à jour le statut premium si nécessaire
+    let subscriptionType = user.subscription_type || 'free';
+    let isPremium = user.is_premium || false;
+    
+    if (user.subscription_expiry && new Date(user.subscription_expiry) < new Date()) {
+      subscriptionType = 'free';
+      isPremium = false;
+      // Mettre à jour en base
+      await pool.query(
+        'UPDATE users SET subscription_type = ?, is_premium = ? WHERE id = ?',
+        ['free', false, user.id]
+      );
+    }
+
     // Générer le token JWT
     const token = jwt.sign(
       { id: user.id, email: user.email, profile_type: user.profile_type },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' } // Valeur par défaut fixe
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
     );
 
     // Retourner les informations de l'utilisateur
@@ -141,7 +213,9 @@ router.post('/login', async (req, res) => {
         name: user.name,
         email: user.email,
         profile_type: user.profile_type,
-        is_admin: user.is_admin || false
+        subscription_type: subscriptionType,
+        is_premium: isPremium,
+        subscription_expiry: user.subscription_expiry
       }
     });
   } catch (error) {
@@ -160,11 +234,11 @@ router.get('/validate', async (req, res) => {
     }
 
     // Vérifier le token JWT
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
     
     // Vérifier si l'utilisateur existe toujours
     const [users] = await pool.query(
-      'SELECT id, name, email, profile_type, is_admin FROM users WHERE id = ?',
+      'SELECT id, name, email, profile_type, subscription_type, is_premium, subscription_expiry FROM users WHERE id = ?',
       [decoded.id]
     );
 
@@ -172,9 +246,29 @@ router.get('/validate', async (req, res) => {
       return res.status(401).json({ message: 'Utilisateur non trouvé' });
     }
 
+    const user = users[0];
+
+    // Vérifier et mettre à jour le statut premium si nécessaire
+    let subscriptionType = user.subscription_type || 'free';
+    let isPremium = user.is_premium || false;
+    
+    if (user.subscription_expiry && new Date(user.subscription_expiry) < new Date()) {
+      subscriptionType = 'free';
+      isPremium = false;
+      // Mettre à jour en base
+      await pool.query(
+        'UPDATE users SET subscription_type = ?, is_premium = ? WHERE id = ?',
+        ['free', false, user.id]
+      );
+    }
+
     res.json({ 
       valid: true, 
-      user: users[0],
+      user: {
+        ...user,
+        subscription_type: subscriptionType,
+        is_premium: isPremium
+      },
       message: 'Token valide' 
     });
   } catch (error) {
