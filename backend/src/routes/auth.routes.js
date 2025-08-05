@@ -49,13 +49,7 @@ router.post('/register', async (req, res) => {
     // Créer le profil spécifique selon le type
     switch (profile_type) {
       case 'handibasket':
-        // Vérifier les champs obligatoires pour handibasket (fix v3 - FORCE DEPLOY)
-        if (!birth_date || !handicap_type || !cat || !residence || !profession) {
-          return res.status(400).json({ 
-            message: 'Champs obligatoires manquants pour handibasket: birth_date, handicap_type, cat, residence, profession' 
-          });
-        }
-        
+        // Inscription handibasket avec valeurs par défaut (profil à compléter plus tard)
         await pool.query(
           `INSERT INTO handibasket_profiles (
             user_id, birth_date, handicap_type, cat, residence, profession, 
@@ -63,11 +57,11 @@ router.post('/register', async (req, res) => {
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             userId, 
-            birth_date, 
-            handicap_type, 
-            cat, 
-            residence, 
-            profession,
+            birth_date || '1990-01-01', // Valeur par défaut
+            handicap_type || 'non_specifie', // Valeur par défaut
+            cat || 'a_definir', // Valeur par défaut plus courte
+            residence || 'a_definir', // Valeur par défaut
+            profession || 'a_definir', // Valeur par défaut
             club || null,
             coach || null,
             position || 'polyvalent',
