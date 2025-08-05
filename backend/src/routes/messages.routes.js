@@ -4,6 +4,15 @@ const db = require('../database/db');
 const authenticateToken = require('../middleware/auth.middleware');
 const { checkPremiumAccess, checkUsageLimit } = require('../middleware/premium.middleware');
 
+// Route de healthcheck pour Railway
+router.get('/', (req, res) => {
+  res.json({ 
+    message: 'Messages API is running',
+    timestamp: new Date().toISOString(),
+    endpoints: ['/conversations', '/conversations/:id/messages']
+  });
+});
+
 // Obtenir toutes les conversations d'un utilisateur
 router.get('/conversations', authenticateToken, async (req, res) => {
   try {

@@ -48,6 +48,23 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/matching', matchingRoutes);
 app.use('/api', contentRoutes);
 
+// Route de healthcheck pour Railway
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    version: '2.0-handibasket-fix'
+  });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    version: '2.0-handibasket-fix'
+  });
+});
+
 // Gestion des erreurs
 app.use((err, req, res, next) => {
   console.error(err.stack);
