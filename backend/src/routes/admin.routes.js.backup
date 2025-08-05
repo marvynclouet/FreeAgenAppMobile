@@ -1,0 +1,271 @@
+const express = require('express');
+const router = express.Router();
+const db = require('../config/db.config');
+
+// Middleware pour vérifier le mot de passe admin
+const verifyAdminPassword = (req, res, next) => {
+  const adminPassword = req.headers['admin-password'];
+  if (adminPassword === 'admin123') {
+    next();
+  } else {
+    res.status(401).json({ message: 'Accès non autorisé' });
+  }
+};
+
+// Récupérer tous les utilisateurs (pour l'admin)
+router.get('/users', verifyAdminPassword, async (req, res) => {
+  try {
+    const [users] = await db.query(`
+      SELECT 
+        id, 
+        email, 
+        first_name, 
+        last_name, 
+        name,
+        profile_type, 
+        subscription_type,
+        profile_image_url,
+        is_active,
+        created_at
+      FROM users 
+      ORDER BY created_at DESC
+    `);
+    
+    res.json(users);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des utilisateurs:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Récupérer les utilisateurs par type de profil
+router.get('/users/search', verifyAdminPassword, async (req, res) => {
+  try {
+    const { type } = req.query;
+    let sql = `
+      SELECT 
+        id, 
+        email, 
+        first_name, 
+        last_name, 
+        name,
+        profile_type, 
+        subscription_type,
+        profile_image_url,
+        is_active,
+        created_at
+      FROM users 
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (type) {
+      sql += ' AND profile_type = ?';
+      params.push(type);
+    }
+
+    sql += ' ORDER BY created_at DESC';
+
+    const [users] = await db.query(sql, params);
+    res.json(users);
+  } catch (error) {
+    console.error('Erreur lors de la recherche des utilisateurs:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Mettre à jour un utilisateur (pour l'admin)
+router.put('/users/:id', verifyAdminPassword, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { subscription_type, is_active } = req.body;
+
+    const updateFields = [];
+    const updateValues = [];
+
+    if (subscription_type !== undefined) {
+      updateFields.push('subscription_type = ?');
+      updateValues.push(subscription_type);
+    }
+
+    if (is_active !== undefined) {
+      updateFields.push('is_active = ?');
+      updateValues.push(is_active);
+    }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({ message: 'Aucun champ à mettre à jour' });
+    }
+
+    updateValues.push(id);
+
+    await db.query(
+      `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`,
+      updateValues
+    );
+
+    // Récupérer l'utilisateur mis à jour
+    const [users] = await db.query(
+      'SELECT * FROM users WHERE id = ?',
+      [id]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    res.json(users[0]);
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour de l\'utilisateur:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Supprimer un utilisateur (pour l'admin)
+router.delete('/users/:id', verifyAdminPassword, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await db.query('DELETE FROM users WHERE id = ?', [id]);
+    
+    res.json({ message: 'Utilisateur supprimé avec succès' });
+  } catch (error) {
+    console.error('Erreur lors de la suppression de l\'utilisateur:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Récupérer toutes les opportunités (pour l'admin)
+router.get('/opportunities', verifyAdminPassword, async (req, res) => {
+  try {
+    const [opportunities] = await db.query(`
+      SELECT 
+        a.*,
+        u.name as user_name,
+        u.email as user_email
+      FROM annonces a
+      LEFT JOIN users u ON a.user_id = u.id
+      ORDER BY a.created_at DESC
+    `);
+    
+    res.json(opportunities);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des opportunités:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Mettre à jour le statut d'une opportunité
+router.put('/opportunities/:id', verifyAdminPassword, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    await db.query(
+      'UPDATE annonces SET status = ? WHERE id = ?',
+      [status, id]
+    );
+
+    // Récupérer l'opportunité mise à jour
+    const [opportunities] = await db.query(
+      'SELECT * FROM annonces WHERE id = ?',
+      [id]
+    );
+
+    if (opportunities.length === 0) {
+      return res.status(404).json({ message: 'Opportunité non trouvée' });
+    }
+
+    res.json(opportunities[0]);
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour de l\'opportunité:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Supprimer une opportunité
+router.delete('/opportunities/:id', verifyAdminPassword, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await db.query('DELETE FROM annonces WHERE id = ?', [id]);
+    
+    res.json({ message: 'Opportunité supprimée avec succès' });
+  } catch (error) {
+    console.error('Erreur lors de la suppression de l\'opportunité:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Récupérer les conversations (pour l'admin)
+router.get('/conversations', verifyAdminPassword, async (req, res) => {
+  try {
+    const [conversations] = await db.query(`
+      SELECT 
+        c.*,
+        u1.name as sender_name,
+        u2.name as receiver_name,
+        (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
+        (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_at,
+        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND is_read = FALSE) as unread_count
+      FROM conversations c
+      LEFT JOIN users u1 ON c.sender_id = u1.id
+      LEFT JOIN users u2 ON c.receiver_id = u2.id
+      WHERE c.is_active = TRUE
+      ORDER BY last_message_at DESC
+    `);
+    
+    res.json({ conversations });
+  } catch (error) {
+    console.error('Erreur lors de la récupération des conversations:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Récupérer les messages d'une conversation
+router.get('/conversations/:conversationId/messages', verifyAdminPassword, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    
+    const [messages] = await db.query(`
+      SELECT 
+        m.*,
+        u.name as sender_name
+      FROM messages m
+      LEFT JOIN users u ON m.sender_id = u.id
+      WHERE m.conversation_id = ?
+      ORDER BY m.created_at ASC
+    `, [conversationId]);
+    
+    res.json(messages);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des messages:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Statistiques du dashboard
+router.get('/stats', verifyAdminPassword, async (req, res) => {
+  try {
+    const [usersResult] = await db.query('SELECT COUNT(*) as total FROM users');
+    const [premiumUsersResult] = await db.query('SELECT COUNT(*) as total FROM users WHERE subscription_type = "premium"');
+    const [activeUsersResult] = await db.query('SELECT COUNT(*) as total FROM users WHERE is_active = TRUE');
+    const [opportunitiesResult] = await db.query('SELECT COUNT(*) as total FROM annonces');
+    const [activeOpportunitiesResult] = await db.query('SELECT COUNT(*) as total FROM annonces WHERE status = "open"');
+    const [conversationsResult] = await db.query('SELECT COUNT(*) as total FROM conversations WHERE is_active = TRUE');
+
+    res.json({
+      totalUsers: usersResult[0].total,
+      premiumUsers: premiumUsersResult[0].total,
+      activeUsers: activeUsersResult[0].total,
+      totalOpportunities: opportunitiesResult[0].total,
+      activeOpportunities: activeOpportunitiesResult[0].total,
+      totalConversations: conversationsResult[0].total
+    });
+  } catch (error) {
+    console.error('Erreur lors de la récupération des statistiques:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+module.exports = router; 

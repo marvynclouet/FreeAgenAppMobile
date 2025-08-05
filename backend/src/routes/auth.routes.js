@@ -49,7 +49,7 @@ router.post('/register', async (req, res) => {
     // Créer le profil spécifique selon le type
     switch (profile_type) {
       case 'handibasket':
-        // Vérifier les champs obligatoires pour handibasket
+        // Vérifier les champs obligatoires pour handibasket (fix v3 - FORCE DEPLOY)
         if (!birth_date || !handicap_type || !cat || !residence || !profession) {
           return res.status(400).json({ 
             message: 'Champs obligatoires manquants pour handibasket: birth_date, handicap_type, cat, residence, profession' 
