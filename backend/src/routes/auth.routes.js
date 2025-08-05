@@ -224,6 +224,15 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Route de diagnostic - version du code
+router.get('/version', (req, res) => {
+  res.json({ 
+    version: '2.0-handibasket-fix',
+    timestamp: new Date().toISOString(),
+    handibasket_fix: true
+  });
+});
+
 // Route de validation du token
 router.get('/validate', async (req, res) => {
   try {
