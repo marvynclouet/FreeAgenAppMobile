@@ -71,7 +71,7 @@ const checkPremiumAccess = (requiredFeature) => {
           break;
           
         case 'messaging':
-          if (user.subscription_type === 'free') {
+          if (user.subscription_type === 'free' && !user.is_premium) {
             return res.status(403).json({ 
               message: 'Messagerie réservée aux abonnés premium',
               feature: 'messaging',
