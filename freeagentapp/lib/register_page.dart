@@ -27,6 +27,7 @@ class _RegisterPageState extends State<RegisterPage> {
   String email = '';
   String password = '';
   bool isLoading = false;
+  bool _isPasswordVisible = false;
 
   @override
   void initState() {
@@ -168,14 +169,28 @@ class _RegisterPageState extends State<RegisterPage> {
                         borderSide: BorderSide.none,
                       ),
                       prefixIcon: const Icon(Icons.lock, color: Colors.white38),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                          color: Colors.white38,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isPasswordVisible = !_isPasswordVisible;
+                          });
+                        },
+                      ),
                     ),
-                    obscureText: true,
+                    obscureText: !_isPasswordVisible,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Entrez votre mot de passe';
                       }
                       if (value.length < 6) {
                         return '6 caractères minimum';
+                      }
+                      if (!RegExp(r'^(?=.*[A-Z])(?=.*\d).{6,}$').hasMatch(value)) {
+                        return 'Doit contenir au moins 1 majuscule et 1 chiffre';
                       }
                       return null;
                     },

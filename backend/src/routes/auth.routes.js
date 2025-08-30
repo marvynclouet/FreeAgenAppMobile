@@ -34,6 +34,14 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Cet email est déjà utilisé' });
     }
 
+    // Valider le mot de passe (au moins 1 majuscule et 1 chiffre)
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{6,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({ 
+        message: 'Le mot de passe doit contenir au moins 6 caractères, une majuscule et un chiffre' 
+      });
+    }
+
     // Hasher le mot de passe
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -106,11 +114,8 @@ router.post('/register', async (req, res) => {
         break;
         
       default:
-        // Pour les autres types de profil, créer un profil générique
-        await pool.query(
-          'INSERT INTO profiles (user_id, profile_type) VALUES (?, ?)',
-          [userId, profile_type]
-        );
+        // Pour les autres types de profil, pas de table spécifique nécessaire
+        console.log(`Profil ${profile_type} créé sans table spécifique`);
         break;
     }
 
