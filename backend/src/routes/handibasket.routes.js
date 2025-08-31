@@ -249,4 +249,4 @@ router.post('/annonces', authMiddleware, async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router; // Force redeploy Sun Aug 31 17:22:38 CEST 2025
