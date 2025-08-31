@@ -54,6 +54,16 @@ router.get('/profile', authMiddleware, async (req, res) => {
   }
 });
 
+// Route de test pour debug
+router.get('/debug', authMiddleware, async (req, res) => {
+  res.json({
+    message: 'Route handibasket debug OK',
+    user: req.user,
+    timestamp: new Date().toISOString(),
+    version: 'v2-flutter-data-support'
+  });
+});
+
 // Créer ou mettre à jour un profil handibasket
 router.put('/profile', authMiddleware, async (req, res) => {
   try {
