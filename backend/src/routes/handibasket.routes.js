@@ -65,7 +65,23 @@ router.put('/profile', authMiddleware, async (req, res) => {
       residence,
       club,
       coach,
-      profession
+      profession,
+      // Nouveaux champs envoyés par Flutter
+      age,
+      gender,
+      nationality,
+      height,
+      weight,
+      position,
+      championship_level,
+      passport_type,
+      experience_years,
+      level,
+      classification,
+      stats,
+      achievements,
+      video_url,
+      bio
     } = req.body;
 
     // Vérifier si le profil existe déjà
@@ -79,16 +95,39 @@ router.put('/profile', authMiddleware, async (req, res) => {
       await pool.query(`
         UPDATE handibasket_profiles 
         SET birth_date = ?, handicap_type = ?, cat = ?, residence = ?, 
-            club = ?, coach = ?, profession = ?, updated_at = CURRENT_TIMESTAMP
+            club = ?, coach = ?, profession = ?, position = ?, championship_level = ?,
+            updated_at = CURRENT_TIMESTAMP
         WHERE user_id = ?
-      `, [birth_date, handicap_type, cat, residence, club, coach, profession, userId]);
+      `, [
+        birth_date || (age ? `1990-01-01` : null), 
+        handicap_type || 'non_specifie', 
+        cat || classification || 'a_definir', 
+        residence || nationality || 'a_definir', 
+        club, 
+        coach, 
+        profession || 'a_definir',
+        position || 'polyvalent',
+        championship_level || 'non_specifie',
+        userId
+      ]);
     } else {
       // Créer un nouveau profil
       await pool.query(`
         INSERT INTO handibasket_profiles 
-        (user_id, birth_date, handicap_type, cat, residence, club, coach, profession) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `, [userId, birth_date, handicap_type, cat, residence, club, coach, profession]);
+        (user_id, birth_date, handicap_type, cat, residence, club, coach, profession, position, championship_level) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        userId, 
+        birth_date || (age ? `1990-01-01` : '1990-01-01'), 
+        handicap_type || 'non_specifie', 
+        cat || classification || 'a_definir', 
+        residence || nationality || 'a_definir', 
+        club, 
+        coach, 
+        profession || 'a_definir',
+        position || 'polyvalent',
+        championship_level || 'non_specifie'
+      ]);
     }
 
     res.json({ message: 'Profil mis à jour avec succès' });
