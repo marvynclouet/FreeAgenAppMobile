@@ -400,7 +400,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
 
   String getFullImageUrl(String url) {
     if (url.startsWith('http')) return url;
-    return 'http://localhost:3000$url';
+    return 'https://freeagenappmobile-production.up.railway.app$url';
   }
 
   @override

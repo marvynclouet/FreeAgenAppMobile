@@ -5,7 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'auth_service.dart';
 
 class PaymentService {
-  static const String baseUrl = 'http://192.168.1.43:3000/api';
+  static const String baseUrl =
+      'https://freeagenappmobile-production.up.railway.app/api';
   final AuthService _authService = AuthService();
 
   Future<Map<String, String>> _getHeaders() async {

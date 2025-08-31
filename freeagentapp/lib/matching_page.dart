@@ -8,6 +8,7 @@ import 'handibasket_page.dart';
 import 'services/message_service.dart';
 import 'messages_page.dart';
 import 'services/subscription_service.dart';
+import 'services/auth_service.dart';
 import 'utils/premium_messages.dart';
 
 class MatchingPage extends StatefulWidget {
@@ -22,6 +23,7 @@ class _MatchingPageState extends State<MatchingPage>
   final MatchingService _matchingService = MatchingService();
   final MessageService _messageService = MessageService();
   final SubscriptionService _subscriptionService = SubscriptionService();
+  final AuthService _authService = AuthService();
 
   late TabController _tabController;
 
@@ -76,6 +78,11 @@ class _MatchingPageState extends State<MatchingPage>
         _error = e.toString();
         _isLoading = false;
       });
+
+      // Si c'est une erreur de session expirée, proposer la reconnexion
+      if (e.toString().contains('Session expirée')) {
+        _showReconnectDialog();
+      }
     }
   }
 
@@ -83,6 +90,31 @@ class _MatchingPageState extends State<MatchingPage>
     setState(() => _isRefreshing = true);
     await _loadMatchingData();
     setState(() => _isRefreshing = false);
+  }
+
+  void _showReconnectDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Session expirée'),
+          content: const Text(
+              'Votre session a expiré. Veuillez vous reconnecter pour continuer.'),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _authService.forceLogout();
+                Navigator.of(context)
+                    .pushNamedAndRemoveUntil('/login', (route) => false);
+              },
+              child: const Text('Se reconnecter'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _sendMessage(MatchProfile profile) async {

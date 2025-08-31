@@ -117,7 +117,7 @@ router.get('/conversations/:conversationId/messages', authenticateToken, async (
 });
 
 // Créer une nouvelle conversation/message (pour postuler à une annonce)
-router.post('/conversations', authenticateToken, checkPremiumAccess('messaging'), checkUsageLimit('messages'), async (req, res) => {
+router.post('/conversations', authenticateToken, async (req, res) => {
   const connection = await pool.getConnection();
   
   try {
@@ -183,7 +183,7 @@ router.post('/conversations', authenticateToken, checkPremiumAccess('messaging')
 });
 
 // Envoyer un message dans une conversation existante
-router.post('/conversations/:conversationId/messages', authenticateToken, checkPremiumAccess('messaging'), checkUsageLimit('messages'), async (req, res) => {
+router.post('/conversations/:conversationId/messages', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const conversationId = req.params.conversationId;

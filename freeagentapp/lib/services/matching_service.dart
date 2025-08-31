@@ -112,7 +112,8 @@ class MatchingStats {
 }
 
 class MatchingService {
-  static const String baseUrl = 'http://192.168.1.43:3000/api';
+  static const String baseUrl =
+      'https://freeagenappmobile-production.up.railway.app/api';
   final AuthService _authService = AuthService();
 
   Future<Map<String, String>> _getHeaders() async {
@@ -144,6 +145,10 @@ class MatchingService {
         final data = json.decode(response.body);
         final List<dynamic> suggestions = data['data'] ?? [];
         return suggestions.map((json) => MatchProfile.fromJson(json)).toList();
+      } else if (response.statusCode == 401) {
+        // Token invalide, forcer la reconnexion
+        await _authService.logout();
+        throw Exception('Session expirée, veuillez vous reconnecter');
       } else {
         throw Exception(
             'Erreur lors de la récupération des suggestions: ${response.statusCode}');
@@ -180,6 +185,10 @@ class MatchingService {
           matchLevel: matchData['matchLevel'],
           matchReasons: List<String>.from(matchData['matchReasons'] ?? []),
         );
+      } else if (response.statusCode == 401) {
+        // Token invalide, forcer la reconnexion
+        await _authService.logout();
+        throw Exception('Session expirée, veuillez vous reconnecter');
       } else {
         throw Exception(
             'Erreur lors du calcul de compatibilité: ${response.statusCode}');
@@ -202,6 +211,10 @@ class MatchingService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return MatchingStats.fromJson(data['data']);
+      } else if (response.statusCode == 401) {
+        // Token invalide, forcer la reconnexion
+        await _authService.logout();
+        throw Exception('Session expirée, veuillez vous reconnecter');
       } else {
         throw Exception(
             'Erreur lors de la récupération des statistiques: ${response.statusCode}');
@@ -228,6 +241,10 @@ class MatchingService {
         final data = json.decode(response.body);
         final List<dynamic> profiles = data['data'] ?? [];
         return profiles.map((json) => MatchProfile.fromJson(json)).toList();
+      } else if (response.statusCode == 401) {
+        // Token invalide, forcer la reconnexion
+        await _authService.logout();
+        throw Exception('Session expirée, veuillez vous reconnecter');
       } else {
         throw Exception('Erreur lors de la découverte: ${response.statusCode}');
       }
@@ -250,6 +267,10 @@ class MatchingService {
         final data = json.decode(response.body);
         final List<dynamic> matches = data['data'] ?? [];
         return matches.map((json) => MatchProfile.fromJson(json)).toList();
+      } else if (response.statusCode == 401) {
+        // Token invalide, forcer la reconnexion
+        await _authService.logout();
+        throw Exception('Session expirée, veuillez vous reconnecter');
       } else {
         throw Exception(
             'Erreur lors de la récupération des meilleurs matches: ${response.statusCode}');
@@ -274,6 +295,10 @@ class MatchingService {
         final data = json.decode(response.body);
         final List<dynamic> matches = data['data'] ?? [];
         return matches.map((json) => MatchProfile.fromJson(json)).toList();
+      } else if (response.statusCode == 401) {
+        // Token invalide, forcer la reconnexion
+        await _authService.logout();
+        throw Exception('Session expirée, veuillez vous reconnecter');
       } else {
         throw Exception(
             'Erreur lors de la récupération des matches récents: ${response.statusCode}');

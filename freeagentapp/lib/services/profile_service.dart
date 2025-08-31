@@ -3,7 +3,8 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class ProfileService {
-  static const String baseUrl = 'http://192.168.1.43:3000/api';
+  static const String baseUrl =
+      'https://freeagenappmobile-production.up.railway.app/api';
   final _authService = AuthService();
 
   // Récupérer le profil selon le type

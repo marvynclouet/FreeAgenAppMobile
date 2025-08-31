@@ -5,7 +5,8 @@ import 'package:http_parser/http_parser.dart' as http_parser;
 import 'auth_service.dart';
 
 class ProfilePhotoService {
-  static const String baseUrl = 'http://localhost:3000/api/upload';
+  static const String baseUrl =
+      'https://freeagenappmobile-production.up.railway.app/api/upload';
   final AuthService _authService = AuthService();
 
   // Récupérer la photo de profil actuelle
@@ -41,21 +42,21 @@ class ProfilePhotoService {
       }
 
       print('Upload de la photo: ${imageFile.path}');
-      
+
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('$baseUrl/profile-image'),
       );
 
       request.headers['Authorization'] = 'Bearer $token';
-      
+
       // Ajouter le fichier avec détection de type MIME
       var multipartFile = await http.MultipartFile.fromPath(
-        'profileImage', 
+        'profileImage',
         imageFile.path,
         // Forcer le type MIME pour les images
       );
-      
+
       // Forcer le type MIME si non détecté
       if (multipartFile.contentType.mimeType == 'application/octet-stream') {
         final extension = imageFile.path.toLowerCase();
@@ -69,7 +70,7 @@ class ProfilePhotoService {
         } else if (extension.endsWith('.webp')) {
           mimeType = 'image/webp';
         }
-        
+
         if (mimeType != null) {
           multipartFile = http.MultipartFile.fromBytes(
             'profileImage',
@@ -79,13 +80,13 @@ class ProfilePhotoService {
           );
         }
       }
-      
+
       request.files.add(multipartFile);
-      
+
       print('Envoi de la requête...');
       final response = await request.send();
       final responseBody = await response.stream.bytesToString();
-      
+
       print('Réponse serveur: ${response.statusCode}');
       print('Corps de la réponse: $responseBody');
 
@@ -136,7 +137,7 @@ class ProfilePhotoService {
       return imageUrl;
     }
 
-    return 'http://localhost:3000$imageUrl';
+    return 'https://freeagenappmobile-production.up.railway.app$imageUrl';
   }
 
   // Vérifier si l'utilisateur a une photo personnalisée
