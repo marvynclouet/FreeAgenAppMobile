@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../database/db');
+const pool = require('../config/pool.config');
 const authenticateToken = require('../middleware/auth.middleware');
 const { checkPremiumAccess, checkUsageLimit } = require('../middleware/premium.middleware');
 
@@ -41,7 +41,7 @@ router.get('/conversations', authenticateToken, async (req, res) => {
       ORDER BY last_message_at DESC
     `;
     
-    const [conversations] = await db.execute(query, [userId, userId, userId]);
+    const [conversations] = await pool.execute(query, [userId, userId, userId]);
     console.log('📥 Conversations trouvées:', conversations.length);
     
     // Ajouter les informations du contact pour chaque conversation
@@ -83,7 +83,7 @@ router.get('/conversations/:conversationId/messages', authenticateToken, async (
     const conversationId = req.params.conversationId;
     
     // Vérifier que l'utilisateur fait partie de la conversation
-    const [conversationCheck] = await db.execute(
+    const [conversationCheck] = await pool.execute(
       'SELECT * FROM conversations WHERE id = ? AND (sender_id = ? OR receiver_id = ?)',
       [conversationId, userId, userId]
     );
@@ -101,10 +101,10 @@ router.get('/conversations/:conversationId/messages', authenticateToken, async (
       ORDER BY m.created_at ASC
     `;
     
-    const [messages] = await db.execute(query, [conversationId]);
+    const [messages] = await pool.execute(query, [conversationId]);
     
     // Marquer les messages comme lus
-    await db.execute(
+    await pool.execute(
       'UPDATE messages SET is_read = TRUE WHERE conversation_id = ? AND sender_id != ?',
       [conversationId, userId]
     );
@@ -118,7 +118,7 @@ router.get('/conversations/:conversationId/messages', authenticateToken, async (
 
 // Créer une nouvelle conversation/message (pour postuler à une annonce)
 router.post('/conversations', authenticateToken, checkPremiumAccess('messaging'), checkUsageLimit('messages'), async (req, res) => {
-  const connection = await db.getConnection();
+  const connection = await pool.getConnection();
   
   try {
     await connection.beginTransaction();
@@ -190,7 +190,7 @@ router.post('/conversations/:conversationId/messages', authenticateToken, checkP
     }
     
     // Vérifier que l'utilisateur fait partie de la conversation
-    const [conversationCheck] = await db.execute(
+    const [conversationCheck] = await pool.execute(
       'SELECT * FROM conversations WHERE id = ? AND (sender_id = ? OR receiver_id = ?)',
       [conversationId, userId, userId]
     );
@@ -200,20 +200,20 @@ router.post('/conversations/:conversationId/messages', authenticateToken, checkP
     }
     
     // Ajouter le message
-    const [result] = await db.execute(
+    const [result] = await pool.execute(
       'INSERT INTO messages (conversation_id, sender_id, content) VALUES (?, ?, ?)',
       [conversationId, userId, content]
     );
     
     // Incrémenter le compteur de messages
-    await db.execute(`
+    await pool.execute(`
       UPDATE user_limits 
       SET messages_sent = messages_sent + 1 
       WHERE user_id = ?
     `, [userId]);
     
     // Mettre à jour la conversation
-    await db.execute(
+    await pool.execute(
       'UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [conversationId]
     );
@@ -235,7 +235,7 @@ router.put('/conversations/:conversationId/read', authenticateToken, async (req,
     const userId = req.user.id;
     const conversationId = req.params.conversationId;
     
-    await db.execute(
+    await pool.execute(
       'UPDATE messages SET is_read = TRUE WHERE conversation_id = ? AND sender_id != ?',
       [conversationId, userId]
     );
@@ -262,7 +262,7 @@ router.get('/unread-count', authenticateToken, async (req, res) => {
       AND c.is_active = TRUE
     `;
     
-    const [result] = await db.execute(query, [userId, userId, userId]);
+    const [result] = await pool.execute(query, [userId, userId, userId]);
     const unreadCount = result[0]?.unread_count || 0;
     
     res.json({ unread_count: unreadCount });
