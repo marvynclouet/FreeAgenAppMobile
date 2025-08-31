@@ -155,12 +155,16 @@ router.post('/conversations', authenticateToken, checkPremiumAccess('messaging')
       [conversationId, senderId, content, messageType]
     );
     
-    // Incrémenter le compteur de messages
-    await connection.execute(`
-      UPDATE user_limits 
-      SET messages_sent = messages_sent + 1 
-      WHERE user_id = ?
-    `, [senderId]);
+    // Incrémenter le compteur de messages (optionnel si table user_limits existe)
+    try {
+      await connection.execute(`
+        UPDATE user_limits 
+        SET messages_sent = messages_sent + 1 
+        WHERE user_id = ?
+      `, [senderId]);
+    } catch (limitError) {
+      console.log('Table user_limits non disponible, ignoré');
+    }
     
     await connection.commit();
     
@@ -205,12 +209,16 @@ router.post('/conversations/:conversationId/messages', authenticateToken, checkP
       [conversationId, userId, content]
     );
     
-    // Incrémenter le compteur de messages
-    await pool.execute(`
-      UPDATE user_limits 
-      SET messages_sent = messages_sent + 1 
-      WHERE user_id = ?
-    `, [userId]);
+    // Incrémenter le compteur de messages (optionnel si table user_limits existe)
+    try {
+      await pool.execute(`
+        UPDATE user_limits 
+        SET messages_sent = messages_sent + 1 
+        WHERE user_id = ?
+      `, [userId]);
+    } catch (limitError) {
+      console.log('Table user_limits non disponible, ignoré');
+    }
     
     // Mettre à jour la conversation
     await pool.execute(
