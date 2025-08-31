@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../config/pool.config');
+const pool = require('../config/db.config');
 const authenticateToken = require('../middleware/auth.middleware');
 const { checkPremiumAccess, checkUsageLimit } = require('../middleware/premium.middleware');
 
