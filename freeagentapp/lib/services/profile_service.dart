@@ -55,13 +55,28 @@ class ProfileService {
     print('Mise à jour du profil pour le type: $profileType');
     print('Données à envoyer: $data');
 
+    // Mapper les données pour handibasket
+    Map<String, dynamic> mappedData = data;
+    if (profileType == 'handibasket') {
+      mappedData = _mapHandibasketData(data);
+      print('Données mappées pour handibasket: $mappedData');
+    }
+
+    // Utiliser l'URL correcte pour handibasket
+    String url;
+    if (profileType == 'handibasket') {
+      url = '$baseUrl/handibasket/profile';
+    } else {
+      url = '$baseUrl/profiles/$profileType/profile';
+    }
+
     final response = await http.put(
-      Uri.parse('$baseUrl/profiles/$profileType/profile'),
+      Uri.parse(url),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
-      body: json.encode(data),
+      body: json.encode(mappedData),
     );
 
     print('Réponse du serveur: ${response.statusCode}');
@@ -71,6 +86,32 @@ class ProfileService {
       throw Exception(
           'Erreur lors de la mise à jour du profil: ${response.body}');
     }
+  }
+
+  // Mapper les données Flutter vers les champs API handibasket
+  Map<String, dynamic> _mapHandibasketData(Map<String, dynamic> flutterData) {
+    // Calculer birth_date à partir de l'âge si fourni
+    String birthDate = '1990-01-01'; // Valeur par défaut
+    if (flutterData['age'] != null) {
+      try {
+        final age = int.parse(flutterData['age'].toString());
+        final currentYear = DateTime.now().year;
+        final birthYear = currentYear - age;
+        birthDate = '$birthYear-01-01';
+      } catch (e) {
+        print('Erreur conversion age: $e');
+      }
+    }
+
+    return {
+      'birth_date': birthDate,
+      'handicap_type': 'moteur', // Valeur par défaut
+      'cat': flutterData['classification']?.toString() ?? 'a_definir',
+      'residence': flutterData['nationality'] ?? 'a_definir',
+      'profession': 'a_definir',
+      'club': null,
+      'coach': null,
+    };
   }
 
   // Obtenir les champs spécifiques selon le type de profil

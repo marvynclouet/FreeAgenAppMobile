@@ -401,24 +401,34 @@ class HandibasketPlayerCard extends StatelessWidget {
     }
   }
 
-  String _calculateAge(String? birthDate) {
-    if (birthDate == null || birthDate.isEmpty) return 'N/A';
-    try {
-      final birth = DateTime.parse(birthDate);
-      final now = DateTime.now();
-      final age = now.year - birth.year;
-      return age.toString();
-    } catch (e) {
-      return 'N/A';
+  String _calculateAge(dynamic birthDate) {
+    if (birthDate == null) return 'N/A';
+    
+    // Si c'est déjà un nombre (âge calculé)
+    if (birthDate is int) return birthDate.toString();
+    
+    // Si c'est une chaîne de caractères (date)
+    if (birthDate is String) {
+      if (birthDate.isEmpty) return 'N/A';
+      try {
+        final birth = DateTime.parse(birthDate);
+        final now = DateTime.now();
+        final age = now.year - birth.year;
+        return age.toString();
+      } catch (e) {
+        return 'N/A';
+      }
     }
+    
+    return 'N/A';
   }
 
   @override
   Widget build(BuildContext context) {
     final genderIcon = _formatGender(player['gender']);
     final championship = _formatChampionship(player['championship_level']);
-    final classification = player['classification'] ?? '';
-    final age = _calculateAge(player['birth_date']);
+    final classification = player['cat'] ?? player['classification'] ?? '';
+    final age = _calculateAge(player['age'] ?? player['birth_date']);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -487,7 +497,7 @@ class HandibasketPlayerCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (classification.isNotEmpty)
+                        if (classification.isNotEmpty && classification != 'a_definir')
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 2),
@@ -610,16 +620,26 @@ class HandibasketPlayerDetailPage extends StatelessWidget {
     }
   }
 
-  String _calculateAge(String? birthDate) {
-    if (birthDate == null || birthDate.isEmpty) return 'Non spécifié';
-    try {
-      final birth = DateTime.parse(birthDate);
-      final now = DateTime.now();
-      final age = now.year - birth.year;
-      return '$age ans';
-    } catch (e) {
-      return 'Non spécifié';
+  String _calculateAge(dynamic birthDate) {
+    if (birthDate == null) return 'Non spécifié';
+    
+    // Si c'est déjà un nombre (âge calculé)
+    if (birthDate is int) return '$birthDate ans';
+    
+    // Si c'est une chaîne de caractères (date)
+    if (birthDate is String) {
+      if (birthDate.isEmpty) return 'Non spécifié';
+      try {
+        final birth = DateTime.parse(birthDate);
+        final now = DateTime.now();
+        final age = now.year - birth.year;
+        return '$age ans';
+      } catch (e) {
+        return 'Non spécifié';
+      }
     }
+    
+    return 'Non spécifié';
   }
 
   Future<void> _sendEmail() async {
@@ -761,7 +781,7 @@ class HandibasketPlayerDetailPage extends StatelessWidget {
                     radius: 60,
                     profileType: 'handibasket',
                   ),
-                  if (player['classification'] != null)
+                  if (player['cat'] != null && player['cat'] != 'a_definir')
                     Positioned(
                       bottom: 0,
                       right: 0,
@@ -775,7 +795,7 @@ class HandibasketPlayerDetailPage extends StatelessWidget {
                               color: const Color(0xFF111014), width: 2),
                         ),
                         child: Text(
-                          'CAT ${player['classification']}',
+                          'CAT ${player['cat']}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -843,7 +863,7 @@ class HandibasketPlayerDetailPage extends StatelessWidget {
 
             _buildInfoSection('Informations personnelles', [
               _buildInfoRow('Email', player['email'] ?? 'Non spécifié'),
-              _buildInfoRow('Âge', _calculateAge(player['birth_date'])),
+              _buildInfoRow('Âge', _calculateAge(player['age'] ?? player['birth_date'])),
               _buildInfoRow('Genre', _formatGenderForDetail(player['gender'])),
               _buildInfoRow(
                   'Lieu de résidence', player['residence'] ?? 'Non spécifié'),
@@ -858,7 +878,7 @@ class HandibasketPlayerDetailPage extends StatelessWidget {
               _buildInfoRow('Niveau championnat',
                   _formatChampionshipForDetail(player['championship_level'])),
               _buildInfoRow('Classification',
-                  player['classification'] ?? 'Non spécifiée'),
+                  player['cat'] ?? player['classification'] ?? 'Non spécifiée'),
               _buildInfoRow('Type de handicap',
                   player['handicap_type'] ?? 'Non spécifié'),
               _buildInfoRow('Club', player['club'] ?? 'Non spécifié'),

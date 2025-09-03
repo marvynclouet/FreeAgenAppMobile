@@ -148,9 +148,16 @@ class _ProfilePageState extends State<ProfilePage> {
             _controllers[key]?.text = '';
           }
         } else {
-          // Pour les champs gender et nationality, prendre les données depuis userData
-          if (key == 'gender' || key == 'nationality') {
-            _controllers[key]?.text = userData?[key]?.toString() ?? '';
+          // Pour les champs mappés, utiliser les données du profil
+          if (key == 'age') {
+            _controllers[key]?.text = data['age']?.toString() ?? '';
+          } else if (key == 'classification') {
+            _controllers[key]?.text = data['classification']?.toString() ?? '';
+          } else if (key == 'nationality') {
+            _controllers[key]?.text = data['nationality']?.toString() ?? '';
+          } else if (key == 'gender') {
+            _controllers[key]?.text =
+                data['gender']?.toString() ?? userData?[key]?.toString() ?? '';
           } else {
             // Initialiser avec les données existantes ou une valeur vide
             _controllers[key]?.text = data[key]?.toString() ?? '';
@@ -345,9 +352,17 @@ class _ProfilePageState extends State<ProfilePage> {
         value = profileData![parts[0]][parts[1]].toString();
       }
     } else {
-      // Pour les champs gender et nationality, regarder dans userData
-      if (fieldName == 'gender' || fieldName == 'nationality') {
-        value = userData?[fieldName]?.toString() ?? '';
+      // Pour les champs mappés, utiliser les données du profil
+      if (fieldName == 'age') {
+        value = profileData?['age']?.toString() ?? '';
+      } else if (fieldName == 'classification') {
+        value = profileData?['classification']?.toString() ?? '';
+      } else if (fieldName == 'nationality') {
+        value = profileData?['nationality']?.toString() ?? '';
+      } else if (fieldName == 'gender') {
+        value = profileData?['gender']?.toString() ??
+            userData?[fieldName]?.toString() ??
+            '';
       } else {
         value = profileData?[fieldName]?.toString() ?? '';
       }

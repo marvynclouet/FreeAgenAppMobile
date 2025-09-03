@@ -257,7 +257,10 @@ class SubscriptionService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return SubscriptionStatus.fromJson(data);
+        print('🔍 DEBUG - Données subscription reçues: $data');
+        final status = SubscriptionStatus.fromJson(data);
+        print('🔍 DEBUG - Status isPremium: ${status.isPremium}');
+        return status;
       } else {
         throw Exception('Erreur lors de la récupération du statut');
       }

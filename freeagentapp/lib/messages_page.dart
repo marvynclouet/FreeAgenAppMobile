@@ -41,6 +41,10 @@ class _MessagesPageState extends State<MessagesPage> {
         _conversations = conversations;
         _isLoading = false;
       });
+
+      print('🔍 DEBUG Messages - isPremium: $_isPremium');
+      print('🔍 DEBUG Messages - status.type: ${status.type}');
+      print('🔍 DEBUG Messages - status.isPremium: ${status.isPremium}');
     } catch (e) {
       print('Erreur lors du chargement des données: $e');
       setState(() => _isLoading = false);

@@ -94,7 +94,12 @@ class _ProfilePhotoPageState extends State<ProfilePhotoPage> {
         _isLoading = true;
       });
 
-      final result = await _photoService.uploadProfileImage(imageFile);
+      // Lire les bytes du fichier
+      final imageBytes = await imageFile.readAsBytes();
+      final fileName = imageFile.path.split('/').last;
+
+      final result =
+          await _photoService.uploadProfileImage(imageBytes, fileName);
       if (result != null) {
         setState(() {
           _currentImageUrl = result['imageUrl'];

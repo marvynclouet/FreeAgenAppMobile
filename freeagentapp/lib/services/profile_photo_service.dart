@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart' as http_parser;
 import 'auth_service.dart';
@@ -33,15 +33,16 @@ class ProfilePhotoService {
     }
   }
 
-  // Uploader une nouvelle photo de profil
-  Future<Map<String, dynamic>?> uploadProfileImage(File imageFile) async {
+  // Uploader une nouvelle photo de profil (compatible web)
+  Future<Map<String, dynamic>?> uploadProfileImage(
+      Uint8List imageBytes, String fileName) async {
     try {
       final token = await _authService.getToken();
       if (token == null) {
         throw Exception('Token d\'authentification manquant');
       }
 
-      print('Upload de la photo: ${imageFile.path}');
+      print('Upload de la photo: $fileName');
 
       var request = http.MultipartRequest(
         'POST',
@@ -50,36 +51,24 @@ class ProfilePhotoService {
 
       request.headers['Authorization'] = 'Bearer $token';
 
-      // Ajouter le fichier avec détection de type MIME
-      var multipartFile = await http.MultipartFile.fromPath(
-        'profileImage',
-        imageFile.path,
-        // Forcer le type MIME pour les images
-      );
-
-      // Forcer le type MIME si non détecté
-      if (multipartFile.contentType.mimeType == 'application/octet-stream') {
-        final extension = imageFile.path.toLowerCase();
-        String? mimeType;
-        if (extension.endsWith('.jpg') || extension.endsWith('.jpeg')) {
-          mimeType = 'image/jpeg';
-        } else if (extension.endsWith('.png')) {
-          mimeType = 'image/png';
-        } else if (extension.endsWith('.gif')) {
-          mimeType = 'image/gif';
-        } else if (extension.endsWith('.webp')) {
-          mimeType = 'image/webp';
-        }
-
-        if (mimeType != null) {
-          multipartFile = http.MultipartFile.fromBytes(
-            'profileImage',
-            await imageFile.readAsBytes(),
-            filename: multipartFile.filename,
-            contentType: http_parser.MediaType.parse(mimeType),
-          );
-        }
+      // Déterminer le type MIME à partir du nom de fichier
+      String mimeType = 'image/jpeg'; // Par défaut
+      final extension = fileName.toLowerCase();
+      if (extension.endsWith('.png')) {
+        mimeType = 'image/png';
+      } else if (extension.endsWith('.gif')) {
+        mimeType = 'image/gif';
+      } else if (extension.endsWith('.webp')) {
+        mimeType = 'image/webp';
       }
+
+      // Créer le MultipartFile à partir des bytes
+      var multipartFile = http.MultipartFile.fromBytes(
+        'profileImage',
+        imageBytes,
+        filename: fileName,
+        contentType: http_parser.MediaType.parse(mimeType),
+      );
 
       request.files.add(multipartFile);
 
