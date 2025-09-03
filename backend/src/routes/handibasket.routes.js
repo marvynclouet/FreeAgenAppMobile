@@ -13,6 +13,8 @@ router.get('/', authMiddleware, async (req, res) => {
         u.email,
         u.profile_type,
         u.profile_image_url,
+        u.gender,
+        u.nationality,
         h.birth_date,
         h.handicap_type,
         h.cat,
@@ -20,6 +22,8 @@ router.get('/', authMiddleware, async (req, res) => {
         h.club,
         h.coach,
         h.profession,
+        h.position,
+        h.championship_level,
         h.created_at
       FROM users u
       LEFT JOIN handibasket_profiles h ON u.id = h.user_id
@@ -27,7 +31,32 @@ router.get('/', authMiddleware, async (req, res) => {
       ORDER BY u.created_at DESC
     `);
 
-    res.json(rows);
+    // Mapper les données pour Flutter
+    const mappedRows = rows.map(row => {
+      // Calculer l'âge si birth_date existe
+      let age = null;
+      if (row.birth_date) {
+        const birth = new Date(row.birth_date);
+        const now = new Date();
+        age = now.getFullYear() - birth.getFullYear();
+      }
+
+      return {
+        ...row,
+        // Champs mappés pour Flutter
+        age: age,
+        classification: row.cat,
+        nationality: row.residence,
+        // Garder les champs originaux aussi
+        cat: row.cat,
+        residence: row.residence,
+        handicap_type: row.handicap_type,
+        position: row.position,
+        championship_level: row.championship_level
+      };
+    });
+
+    res.json(mappedRows);
   } catch (error) {
     console.error('Erreur lors de la récupération des joueurs handibasket:', error);
     res.status(500).json({ message: 'Erreur serveur' });
@@ -184,6 +213,8 @@ router.get('/search', authMiddleware, async (req, res) => {
         u.name,
         u.email,
         u.profile_image_url,
+        u.gender,
+        u.nationality,
         h.birth_date,
         h.handicap_type,
         h.cat,
@@ -191,6 +222,8 @@ router.get('/search', authMiddleware, async (req, res) => {
         h.club,
         h.coach,
         h.profession,
+        h.position,
+        h.championship_level,
         h.created_at
       FROM users u
       JOIN handibasket_profiles h ON u.id = h.user_id
@@ -217,7 +250,33 @@ router.get('/search', authMiddleware, async (req, res) => {
     query += ' ORDER BY u.created_at DESC';
     
     const [rows] = await pool.query(query, params);
-    res.json(rows);
+    
+    // Mapper les données pour Flutter
+    const mappedRows = rows.map(row => {
+      // Calculer l'âge si birth_date existe
+      let age = null;
+      if (row.birth_date) {
+        const birth = new Date(row.birth_date);
+        const now = new Date();
+        age = now.getFullYear() - birth.getFullYear();
+      }
+
+      return {
+        ...row,
+        // Champs mappés pour Flutter
+        age: age,
+        classification: row.cat,
+        nationality: row.residence,
+        // Garder les champs originaux aussi
+        cat: row.cat,
+        residence: row.residence,
+        handicap_type: row.handicap_type,
+        position: row.position,
+        championship_level: row.championship_level
+      };
+    });
+    
+    res.json(mappedRows);
   } catch (error) {
     console.error('Erreur lors de la recherche des joueurs handibasket:', error);
     res.status(500).json({ message: 'Erreur serveur' });
