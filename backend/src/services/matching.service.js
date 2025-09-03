@@ -1,8 +1,8 @@
-const db = require('../database/db');
+const pool = require('../config/db.config');
 
 class MatchingService {
   constructor() {
-    this.db = db;
+    this.pool = pool;
   }
 
   // Système de matching basé sur les annonces
@@ -21,6 +21,10 @@ class MatchingService {
         case 'player':
           // Un joueur cherche des annonces d'équipes qui lui correspondent
           return await this.findTeamAdsForPlayer(userId, limit);
+        
+        case 'handibasket':
+          // Un joueur handibasket cherche des annonces d'équipes handibasket
+          return await this.findHandibasketAdsForPlayer(userId, limit);
         
         case 'club':
           // Une équipe cherche des joueurs qui correspondent à ses annonces
@@ -41,6 +45,74 @@ class MatchingService {
       }
     } catch (error) {
       console.error('Erreur lors de la recherche de matches:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Trouve les annonces handibasket qui correspondent à un joueur handibasket
+   */
+  async findHandibasketAdsForPlayer(playerId, limit = 10) {
+    try {
+      // Récupérer le profil du joueur handibasket
+      const playerProfile = await this.getHandibasketProfile(playerId);
+      if (!playerProfile) {
+        throw new Error('Profil handibasket introuvable');
+      }
+
+      // Récupérer les annonces handibasket ouvertes
+      const query = `
+        SELECT 
+          a.id, a.title, a.description, a.requirements, a.salary_range, 
+          a.location, a.created_at, a.user_id as team_user_id,
+          u.name as team_name, u.email as team_email, u.profile_image_url as team_image,
+          cp.club_name, cp.level as team_level, cp.location as team_location
+        FROM annonces a
+        JOIN users u ON a.user_id = u.id
+        LEFT JOIN club_profiles cp ON u.id = cp.user_id
+        WHERE (a.type = 'recrutement' OR a.type = 'coaching')
+          AND a.status = 'open'
+          AND a.user_id != ?
+          AND (a.title LIKE '%handibasket%' OR a.description LIKE '%handibasket%' OR a.requirements LIKE '%handibasket%')
+        ORDER BY a.created_at DESC
+        LIMIT ?
+      `;
+
+      const [rows] = await pool.execute(query, [playerId.toString(), limit.toString()]);
+
+      // Calculer le score de compatibilité pour chaque annonce
+      const matchesWithScores = await Promise.all(
+        rows.map(async (ad) => {
+          const compatibilityScore = this.calculateHandibasketAdCompatibility(playerProfile, ad);
+          return {
+            id: ad.id.toString(),
+            type: 'club',
+            name: ad.team_name,
+            email: ad.team_email,
+            image: ad.team_image,
+            club_name: ad.club_name,
+            level: ad.team_level,
+            location: ad.team_location || ad.location,
+            advertisement: {
+              id: ad.id,
+              title: ad.title,
+              description: ad.description,
+              requirements: ad.requirements,
+              salary_range: ad.salary_range,
+              location: ad.location
+            },
+            compatibilityScore,
+            matchLevel: this.getMatchLevel(compatibilityScore),
+            reasons: this.getHandibasketAdMatchReasons(playerProfile, ad, compatibilityScore)
+          };
+        })
+      );
+
+      // Trier par score de compatibilité
+      return matchesWithScores.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
+
+    } catch (error) {
+      console.error('Erreur lors de la recherche d\'annonces handibasket pour joueur:', error);
       throw error;
     }
   }
@@ -73,7 +145,7 @@ class MatchingService {
         LIMIT ?
       `;
 
-      const [rows] = await db.execute(query, [playerId.toString(), limit.toString()]);
+      const [rows] = await pool.execute(query, [playerId.toString(), limit.toString()]);
 
       // Calculer le score de compatibilité pour chaque annonce
       const matchesWithScores = await Promise.all(
@@ -126,7 +198,7 @@ class MatchingService {
         LIMIT 5
       `;
 
-      const [teamAds] = await db.execute(teamAdsQuery, [teamId.toString()]);
+      const [teamAds] = await pool.execute(teamAdsQuery, [teamId.toString()]);
       
       if (teamAds.length === 0) {
         return [];
@@ -146,7 +218,7 @@ class MatchingService {
         LIMIT ?
       `;
 
-      const [players] = await db.execute(playersQuery, [teamId.toString(), (limit * 2).toString()]);
+      const [players] = await pool.execute(playersQuery, [teamId.toString(), (limit * 2).toString()]);
 
       // Calculer le score de compatibilité pour chaque joueur avec chaque annonce
       const matchesWithScores = [];
@@ -215,7 +287,7 @@ class MatchingService {
         LIMIT ?
       `;
 
-      const [rows] = await db.execute(query, [coachId.toString(), limit.toString()]);
+      const [rows] = await pool.execute(query, [coachId.toString(), limit.toString()]);
 
       return rows.map(ad => ({
         id: ad.id.toString(),
@@ -264,7 +336,7 @@ class MatchingService {
         LIMIT ?
       `;
 
-      const [rows] = await db.execute(query, [professionalId.toString(), limit.toString()]);
+      const [rows] = await pool.execute(query, [professionalId.toString(), limit.toString()]);
 
       return rows.map(ad => ({
         id: ad.id.toString(),
@@ -308,11 +380,38 @@ class MatchingService {
         WHERE p.user_id = ?
       `;
 
-      const [rows] = await db.execute(query, [playerId.toString()]);
+      const [rows] = await pool.execute(query, [playerId.toString()]);
       return rows[0] || null;
 
     } catch (error) {
       console.error('Erreur lors de la récupération du profil joueur:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Récupère le profil d'un joueur handibasket
+   */
+  async getHandibasketProfile(playerId) {
+    try {
+      const query = `
+        SELECT 
+          hp.*, u.name, u.email, u.profile_image_url, u.gender, u.nationality,
+          COALESCE(hp.position, 'polyvalent') as position,
+          COALESCE(hp.championship_level, 'non_specifie') as level,
+          COALESCE(TIMESTAMPDIFF(YEAR, hp.birth_date, CURDATE()), 25) as age,
+          COALESCE(hp.experience_years, 0) as experience_years,
+          COALESCE(hp.residence, 'France') as location
+        FROM handibasket_profiles hp
+        JOIN users u ON hp.user_id = u.id
+        WHERE hp.user_id = ?
+      `;
+
+      const [rows] = await pool.execute(query, [playerId.toString()]);
+      return rows[0] || null;
+
+    } catch (error) {
+      console.error('Erreur lors de la récupération du profil handibasket:', error);
       throw error;
     }
   }
@@ -424,6 +523,104 @@ class MatchingService {
   }
 
   /**
+   * Calcule la compatibilité entre un joueur handibasket et une annonce
+   */
+  calculateHandibasketAdCompatibility(playerProfile, advertisement) {
+    let score = 0;
+    const requirements = advertisement.requirements || '';
+    const description = advertisement.description || '';
+    const text = (requirements + ' ' + description).toLowerCase();
+
+    // 1. Vérifier que c'est une annonce handibasket (40% du score)
+    if (text.includes('handibasket')) {
+      score += 40;
+    }
+
+    // 2. Position (25% du score)
+    if (playerProfile.position) {
+      const playerPos = playerProfile.position.toLowerCase();
+      if (text.includes(playerPos) || 
+          (playerPos.includes('polyvalent') && text.includes('polyvalent'))) {
+        score += 25;
+      } else if (text.includes('polyvalent') || text.includes('tous postes')) {
+        score += 15;
+      }
+    }
+
+    // 3. Niveau (20% du score)
+    if (playerProfile.level) {
+      const playerLevel = playerProfile.level.toLowerCase();
+      if (text.includes(playerLevel) ||
+          (playerLevel.includes('regional') && text.includes('regional')) ||
+          (playerLevel.includes('national') && text.includes('national'))) {
+        score += 20;
+      }
+    }
+
+    // 4. Expérience (10% du score)
+    if (playerProfile.experience_years) {
+      const experience = playerProfile.experience_years;
+      if (text.includes(`${experience} ans`) || 
+          text.includes(`${experience} années`) ||
+          (experience >= 3 && text.includes('expérience'))) {
+        score += 10;
+      }
+    }
+
+    // 5. Localisation (5% du score)
+    if (advertisement.location && playerProfile.location) {
+      if (advertisement.location.toLowerCase().includes(playerProfile.location.toLowerCase()) ||
+          playerProfile.location.toLowerCase().includes(advertisement.location.toLowerCase())) {
+        score += 5;
+      }
+    }
+
+    return Math.min(score, 100); // Limiter à 100%
+  }
+
+  /**
+   * Génère les raisons du match entre un joueur handibasket et une annonce
+   */
+  getHandibasketAdMatchReasons(playerProfile, advertisement, score) {
+    const reasons = [];
+    const requirements = advertisement.requirements || '';
+    const description = advertisement.description || '';
+    const text = (requirements + ' ' + description).toLowerCase();
+
+    // Raison principale : annonce handibasket
+    if (text.includes('handibasket')) {
+      reasons.push('Annonce handibasket');
+    }
+
+    if (playerProfile.position && text.includes(playerProfile.position.toLowerCase())) {
+      reasons.push(`Poste recherché : ${playerProfile.position}`);
+    }
+
+    if (playerProfile.level && text.includes(playerProfile.level.toLowerCase())) {
+      reasons.push(`Niveau correspondant : ${playerProfile.level}`);
+    }
+
+    if (playerProfile.experience_years && playerProfile.experience_years >= 3) {
+      reasons.push(`Expérience : ${playerProfile.experience_years} ans`);
+    }
+
+    if (advertisement.location && playerProfile.location && 
+        advertisement.location.toLowerCase().includes(playerProfile.location.toLowerCase())) {
+      reasons.push(`Localisation : ${advertisement.location}`);
+    }
+
+    if (advertisement.salary_range) {
+      reasons.push(`Rémunération : ${advertisement.salary_range}`);
+    }
+
+    if (reasons.length === 0) {
+      reasons.push('Profil handibasket compatible');
+    }
+
+    return reasons;
+  }
+
+  /**
    * Détermine le niveau de match selon le score
    */
   getMatchLevel(score) {
@@ -496,6 +693,167 @@ class MatchingService {
       console.error('Erreur lors de la génération des suggestions:', error);
       throw error;
     }
+  }
+
+  /**
+   * Récupère le profil d'un utilisateur selon son type
+   */
+  async getUserProfile(userId, userType) {
+    try {
+      let query = '';
+      let params = [userId.toString()];
+
+      switch (userType) {
+        case 'player':
+          query = `
+            SELECT p.*, u.name, u.email, u.profile_image_url, u.gender, u.nationality
+            FROM player_profiles p
+            JOIN users u ON p.user_id = u.id
+            WHERE p.user_id = ?
+          `;
+          break;
+        case 'handibasket':
+          query = `
+            SELECT hp.*, u.name, u.email, u.profile_image_url, u.gender, u.nationality
+            FROM handibasket_profiles hp
+            JOIN users u ON hp.user_id = u.id
+            WHERE hp.user_id = ?
+          `;
+          break;
+        case 'club':
+          query = `
+            SELECT cp.*, u.name, u.email, u.profile_image_url
+            FROM club_profiles cp
+            JOIN users u ON cp.user_id = u.id
+            WHERE cp.user_id = ?
+          `;
+          break;
+        case 'coach_pro':
+        case 'coach_basket':
+          query = `
+            SELECT c.*, u.name, u.email, u.profile_image_url
+            FROM coach_profiles c
+            JOIN users u ON c.user_id = u.id
+            WHERE c.user_id = ?
+          `;
+          break;
+        default:
+          throw new Error(`Type de profil non supporté: ${userType}`);
+      }
+
+      const [rows] = await pool.execute(query, params);
+      return rows[0] || null;
+
+    } catch (error) {
+      console.error('Erreur lors de la récupération du profil utilisateur:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Calcule le score de compatibilité entre deux profils
+   */
+  async calculateCompatibilityScore(userProfile, targetProfile) {
+    try {
+      // Algorithme simple de compatibilité basé sur les critères communs
+      let score = 0;
+      let totalCriteria = 0;
+
+      // Comparer les positions (pour les joueurs)
+      if (userProfile.position && targetProfile.position) {
+        totalCriteria++;
+        if (userProfile.position === targetProfile.position || 
+            userProfile.position === 'polyvalent' || 
+            targetProfile.position === 'polyvalent') {
+          score += 1;
+        }
+      }
+
+      // Comparer les niveaux
+      if (userProfile.level && targetProfile.level) {
+        totalCriteria++;
+        if (userProfile.level === targetProfile.level) {
+          score += 1;
+        }
+      }
+
+      // Comparer les localisations
+      if (userProfile.location && targetProfile.location) {
+        totalCriteria++;
+        if (userProfile.location.toLowerCase().includes(targetProfile.location.toLowerCase()) ||
+            targetProfile.location.toLowerCase().includes(userProfile.location.toLowerCase())) {
+          score += 1;
+        }
+      }
+
+      // Comparer les âges (pour les joueurs)
+      if (userProfile.age && targetProfile.age) {
+        totalCriteria++;
+        const ageDiff = Math.abs(userProfile.age - targetProfile.age);
+        if (ageDiff <= 5) {
+          score += 1;
+        } else if (ageDiff <= 10) {
+          score += 0.5;
+        }
+      }
+
+      // Retourner le score normalisé (0-1)
+      return totalCriteria > 0 ? score / totalCriteria : 0.5;
+
+    } catch (error) {
+      console.error('Erreur lors du calcul de compatibilité:', error);
+      return 0.5; // Score par défaut
+    }
+  }
+
+  /**
+   * Génère les raisons du match entre deux profils
+   */
+  getMatchReasons(userProfile, targetProfile, compatibilityScore) {
+    const reasons = [];
+
+    // Position compatible
+    if (userProfile.position && targetProfile.position) {
+      if (userProfile.position === targetProfile.position) {
+        reasons.push(`Même poste : ${userProfile.position}`);
+      } else if (userProfile.position === 'polyvalent' || targetProfile.position === 'polyvalent') {
+        reasons.push('Poste polyvalent compatible');
+      }
+    }
+
+    // Niveau compatible
+    if (userProfile.level && targetProfile.level && userProfile.level === targetProfile.level) {
+      reasons.push(`Même niveau : ${userProfile.level}`);
+    }
+
+    // Localisation proche
+    if (userProfile.location && targetProfile.location) {
+      if (userProfile.location.toLowerCase().includes(targetProfile.location.toLowerCase()) ||
+          targetProfile.location.toLowerCase().includes(userProfile.location.toLowerCase())) {
+        reasons.push(`Localisation : ${targetProfile.location}`);
+      }
+    }
+
+    // Âge compatible
+    if (userProfile.age && targetProfile.age) {
+      const ageDiff = Math.abs(userProfile.age - targetProfile.age);
+      if (ageDiff <= 5) {
+        reasons.push('Âge similaire');
+      }
+    }
+
+    // Si aucune raison spécifique, ajouter une raison générique
+    if (reasons.length === 0) {
+      if (compatibilityScore >= 0.8) {
+        reasons.push('Profil très compatible');
+      } else if (compatibilityScore >= 0.6) {
+        reasons.push('Profil compatible');
+      } else {
+        reasons.push('Profil potentiellement intéressant');
+      }
+    }
+
+    return reasons;
   }
 }
 
