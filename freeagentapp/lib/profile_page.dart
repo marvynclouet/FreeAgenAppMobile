@@ -134,6 +134,14 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         profileData = data;
       });
+      
+      // Debug: afficher les champs disponibles
+      if (data.isNotEmpty) {
+        print('Champs disponibles dans profileData:');
+        data.forEach((key, value) {
+          print('  $key: $value');
+        });
+      }
 
       // Remplir les contrôleurs avec les données du profil si elles existent
       for (var key in _controllers.keys) {
@@ -159,7 +167,7 @@ class _ProfilePageState extends State<ProfilePage> {
             _controllers[key]?.text =
                 data['gender']?.toString() ?? userData?[key]?.toString() ?? '';
           } else {
-            // Initialiser avec les données existantes ou une valeur vide
+            // Pour tous les autres champs, utiliser les données du profil directement
             _controllers[key]?.text = data[key]?.toString() ?? '';
           }
         }
@@ -343,6 +351,8 @@ class _ProfilePageState extends State<ProfilePage> {
     String fieldName = field['name'] as String;
     String fieldLabel = field['label'] as String;
     String value = '';
+    
+    print('DEBUG _buildViewField: $fieldName -> $fieldLabel');
 
     if (fieldName.contains('.')) {
       // Pour les champs imbriqués comme stats.points
@@ -364,9 +374,12 @@ class _ProfilePageState extends State<ProfilePage> {
             userData?[fieldName]?.toString() ??
             '';
       } else {
+        // Pour tous les autres champs, utiliser les données du profil directement
         value = profileData?[fieldName]?.toString() ?? '';
       }
     }
+
+    print('DEBUG valeur trouvée pour $fieldName: "$value"');
 
     if (value.isEmpty) {
       value = 'Non renseigné';

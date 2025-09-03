@@ -686,8 +686,6 @@ class ProfileService {
           ],
         };
 
-
-
       default:
         return {
           'sections': [
