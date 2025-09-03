@@ -293,4 +293,4 @@ router.delete('/profile-image', authMiddleware, async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router; // Force redeploy upload fix Wed Sep  3 18:40:00 CEST 2025
