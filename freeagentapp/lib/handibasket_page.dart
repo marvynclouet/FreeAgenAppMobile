@@ -403,10 +403,10 @@ class HandibasketPlayerCard extends StatelessWidget {
 
   String _calculateAge(dynamic birthDate) {
     if (birthDate == null) return 'N/A';
-    
+
     // Si c'est déjà un nombre (âge calculé)
     if (birthDate is int) return birthDate.toString();
-    
+
     // Si c'est une chaîne de caractères (date)
     if (birthDate is String) {
       if (birthDate.isEmpty) return 'N/A';
@@ -419,7 +419,7 @@ class HandibasketPlayerCard extends StatelessWidget {
         return 'N/A';
       }
     }
-    
+
     return 'N/A';
   }
 
@@ -497,7 +497,8 @@ class HandibasketPlayerCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (classification.isNotEmpty && classification != 'a_definir')
+                        if (classification.isNotEmpty &&
+                            classification != 'a_definir')
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 2),
@@ -622,10 +623,10 @@ class HandibasketPlayerDetailPage extends StatelessWidget {
 
   String _calculateAge(dynamic birthDate) {
     if (birthDate == null) return 'Non spécifié';
-    
+
     // Si c'est déjà un nombre (âge calculé)
     if (birthDate is int) return '$birthDate ans';
-    
+
     // Si c'est une chaîne de caractères (date)
     if (birthDate is String) {
       if (birthDate.isEmpty) return 'Non spécifié';
@@ -638,7 +639,7 @@ class HandibasketPlayerDetailPage extends StatelessWidget {
         return 'Non spécifié';
       }
     }
-    
+
     return 'Non spécifié';
   }
 
@@ -863,7 +864,8 @@ class HandibasketPlayerDetailPage extends StatelessWidget {
 
             _buildInfoSection('Informations personnelles', [
               _buildInfoRow('Email', player['email'] ?? 'Non spécifié'),
-              _buildInfoRow('Âge', _calculateAge(player['age'] ?? player['birth_date'])),
+              _buildInfoRow(
+                  'Âge', _calculateAge(player['age'] ?? player['birth_date'])),
               _buildInfoRow('Genre', _formatGenderForDetail(player['gender'])),
               _buildInfoRow(
                   'Lieu de résidence', player['residence'] ?? 'Non spécifié'),

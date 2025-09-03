@@ -20,8 +20,16 @@ class ProfileService {
     print('Récupération du profil pour le type: $profileType');
     print('Token: $token');
 
+    // Utiliser l'URL correcte pour handibasket
+    String url;
+    if (profileType == 'handibasket') {
+      url = '$baseUrl/handibasket/profile';
+    } else {
+      url = '$baseUrl/profiles/$profileType/profile';
+    }
+
     final response = await http.get(
-      Uri.parse('$baseUrl/profiles/$profileType/profile'),
+      Uri.parse(url),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -678,73 +686,7 @@ class ProfileService {
           ],
         };
 
-      case 'handibasket':
-        return {
-          'sections': [
-            {
-              'title': 'Informations personnelles',
-              'fields': [
-                {
-                  'name': 'birth_date',
-                  'label': 'Date de naissance',
-                  'type': 'date',
-                  'required': true,
-                },
-                {
-                  'name': 'residence',
-                  'label': 'Lieu de résidence',
-                  'type': 'text',
-                  'required': true,
-                },
-                {
-                  'name': 'profession',
-                  'label': 'Profession',
-                  'type': 'text',
-                  'required': true,
-                },
-              ],
-            },
-            {
-              'title': 'Informations sportives',
-              'fields': [
-                {
-                  'name': 'handicap_type',
-                  'label': 'Type de handicap',
-                  'type': 'text',
-                  'required': true,
-                },
-                {
-                  'name': 'cat',
-                  'label': 'Classification CAT',
-                  'type': 'text',
-                  'required': true,
-                  'options': [
-                    '1.0',
-                    '1.5',
-                    '2.0',
-                    '2.5',
-                    '3.0',
-                    '3.5',
-                    '4.0',
-                    '4.5'
-                  ],
-                },
-                {
-                  'name': 'club',
-                  'label': 'Club actuel',
-                  'type': 'text',
-                  'required': false,
-                },
-                {
-                  'name': 'coach',
-                  'label': 'Entraîneur',
-                  'type': 'text',
-                  'required': false,
-                },
-              ],
-            },
-          ],
-        };
+
 
       default:
         return {
