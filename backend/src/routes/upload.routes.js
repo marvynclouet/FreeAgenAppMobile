@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const db = require('../database/db');
+const pool = require('../config/db.config');
 const authMiddleware = require('../middleware/auth.middleware');
 
 const router = express.Router();
@@ -119,7 +119,7 @@ router.post('/profile-image', authMiddleware, (req, res, next) => {
 
     // Supprimer l'ancienne photo si elle existe
     try {
-      const [oldImageRows] = await db.execute(
+      const [oldImageRows] = await pool.execute(
         'SELECT profile_image_url FROM users WHERE id = ?',
         [userId]
       );
@@ -135,7 +135,7 @@ router.post('/profile-image', authMiddleware, (req, res, next) => {
     }
 
     // Mettre à jour l'URL de l'image dans la table users
-    await db.execute(
+    await pool.execute(
       'UPDATE users SET profile_image_url = ?, profile_image_uploaded_at = NOW() WHERE id = ?',
       [imageUrl, userId]
     );
@@ -154,7 +154,7 @@ router.post('/profile-image', authMiddleware, (req, res, next) => {
     const profileTable = profileTableMap[profileType];
     if (profileTable) {
       try {
-        await db.execute(
+        await pool.execute(
           `UPDATE ${profileTable} SET profile_image_url = ? WHERE user_id = ?`,
           [imageUrl, userId]
         );
@@ -207,7 +207,7 @@ router.get('/profile-image', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const [rows] = await db.execute(
+    const [rows] = await pool.execute(
       'SELECT profile_image_url, profile_image_uploaded_at FROM users WHERE id = ?',
       [userId]
     );
@@ -237,7 +237,7 @@ router.delete('/profile-image', authMiddleware, async (req, res) => {
     const profileType = req.user.profile_type;
 
     // Récupérer l'URL de l'image actuelle
-    const [rows] = await db.execute(
+    const [rows] = await pool.execute(
       'SELECT profile_image_url FROM users WHERE id = ?',
       [userId]
     );
@@ -257,7 +257,7 @@ router.delete('/profile-image', authMiddleware, async (req, res) => {
     }
 
     // Supprimer l'URL de la base de données
-    await db.execute(
+    await pool.execute(
       'UPDATE users SET profile_image_url = NULL, profile_image_uploaded_at = NULL WHERE id = ?',
       [userId]
     );
@@ -276,7 +276,7 @@ router.delete('/profile-image', authMiddleware, async (req, res) => {
     const profileTable = profileTableMap[profileType];
     if (profileTable) {
       try {
-        await db.execute(
+        await pool.execute(
           `UPDATE ${profileTable} SET profile_image_url = NULL WHERE user_id = ?`,
           [userId]
         );
