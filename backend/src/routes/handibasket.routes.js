@@ -24,6 +24,15 @@ router.get('/', authMiddleware, async (req, res) => {
         h.profession,
         h.position,
         h.championship_level,
+        h.height,
+        h.weight,
+        h.passport_type,
+        h.experience_years,
+        h.level,
+        h.stats,
+        h.achievements,
+        h.video_url,
+        h.bio,
         h.created_at
       FROM users u
       LEFT JOIN handibasket_profiles h ON u.id = h.user_id
@@ -162,6 +171,8 @@ router.put('/profile', authMiddleware, async (req, res) => {
         UPDATE handibasket_profiles 
         SET birth_date = ?, handicap_type = ?, cat = ?, residence = ?, 
             club = ?, coach = ?, profession = ?, position = ?, championship_level = ?,
+            height = ?, weight = ?, passport_type = ?, experience_years = ?, 
+            level = ?, stats = ?, achievements = ?, video_url = ?, bio = ?,
             updated_at = CURRENT_TIMESTAMP
         WHERE user_id = ?
       `, [
@@ -174,14 +185,24 @@ router.put('/profile', authMiddleware, async (req, res) => {
         profession || 'a_definir',
         position || 'polyvalent',
         championship_level || 'non_specifie',
+        height,
+        weight,
+        passport_type,
+        experience_years,
+        level,
+        stats ? JSON.stringify(stats) : null,
+        achievements,
+        video_url,
+        bio,
         userId
       ]);
     } else {
       // Créer un nouveau profil
       await pool.query(`
         INSERT INTO handibasket_profiles 
-        (user_id, birth_date, handicap_type, cat, residence, club, coach, profession, position, championship_level) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (user_id, birth_date, handicap_type, cat, residence, club, coach, profession, position, championship_level,
+         height, weight, passport_type, experience_years, level, stats, achievements, video_url, bio) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         userId, 
         birth_date || (age ? `1990-01-01` : '1990-01-01'), 
@@ -192,7 +213,16 @@ router.put('/profile', authMiddleware, async (req, res) => {
         coach, 
         profession || 'a_definir',
         position || 'polyvalent',
-        championship_level || 'non_specifie'
+        championship_level || 'non_specifie',
+        height,
+        weight,
+        passport_type,
+        experience_years,
+        level,
+        stats ? JSON.stringify(stats) : null,
+        achievements,
+        video_url,
+        bio
       ]);
     }
 
@@ -224,6 +254,15 @@ router.get('/search', authMiddleware, async (req, res) => {
         h.profession,
         h.position,
         h.championship_level,
+        h.height,
+        h.weight,
+        h.passport_type,
+        h.experience_years,
+        h.level,
+        h.stats,
+        h.achievements,
+        h.video_url,
+        h.bio,
         h.created_at
       FROM users u
       JOIN handibasket_profiles h ON u.id = h.user_id
