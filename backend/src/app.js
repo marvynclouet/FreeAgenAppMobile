@@ -30,6 +30,7 @@ const storeRoutes = require('./routes/store.routes');
 const uploadRoutes = require('./routes/upload.routes');
 const matchingRoutes = require('./routes/matching.routes');
 const contentRoutes = require('./routes/content.routes');
+const opportunityRoutes = require('./routes/opportunity.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -46,7 +47,8 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/matching', matchingRoutes);
-app.use('/api', contentRoutes);
+app.use('/api/opportunities', opportunityRoutes);
+app.use('/api/content', contentRoutes);
 
 // Route de healthcheck pour Railway
 app.get('/health', (req, res) => {

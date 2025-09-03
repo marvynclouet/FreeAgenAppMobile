@@ -1,17 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const mysql = require('mysql2/promise');
 const authMiddleware = require('../middleware/auth.middleware');
-const dbConfig = require('../config/db.config');
+const pool = require('../config/db.config');
 
 // Récupérer le fil d'actualités (posts + opportunités)
 router.get('/feed', authMiddleware, async (req, res) => {
-  let connection;
   try {
-    connection = await dbConfig.getConnection();
-    
     // Récupérer les posts
-    const [posts] = await connection.execute(`
+    const [posts] = await pool.execute(`
       SELECT 
         p.id,
         'post' as type,
@@ -32,7 +28,7 @@ router.get('/feed', authMiddleware, async (req, res) => {
     `);
 
     // Récupérer les opportunités
-    const [opportunities] = await connection.execute(`
+    const [opportunities] = await pool.execute(`
       SELECT 
         a.id,
         'opportunity' as type,
@@ -54,7 +50,7 @@ router.get('/feed', authMiddleware, async (req, res) => {
     `);
 
     // Récupérer les événements
-    const [events] = await connection.execute(`
+    const [events] = await pool.execute(`
       SELECT 
         e.id,
         'event' as type,
@@ -83,10 +79,6 @@ router.get('/feed', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Erreur lors de la récupération du fil d\'actualités:', error);
     res.status(500).json({ message: 'Erreur serveur' });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 });
 

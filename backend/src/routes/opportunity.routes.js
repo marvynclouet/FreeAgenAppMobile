@@ -6,7 +6,7 @@ const authMiddleware = require('../middleware/auth.middleware');
 // Récupérer toutes les opportunités (depuis annonces)
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const [opportunities] = await db.query(`
+    const [opportunities] = await db.execute(`
       SELECT a.*, u.name as user_name, u.email as user_email
       FROM annonces a
       JOIN users u ON a.user_id = u.id
