@@ -24,7 +24,7 @@ router.get('/suggestions', async (req, res) => {
       userId,
       userType,
       {
-        minScore: parseFloat(minScore),
+        minScore: parseFloat(minScore) * 100, // Convertir 0.5 en 50
         maxResults: parseInt(maxResults),
         includeReasons: includeReasons === 'true'
       }
