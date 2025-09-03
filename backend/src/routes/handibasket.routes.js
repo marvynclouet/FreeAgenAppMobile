@@ -40,14 +40,41 @@ router.get('/profile', authMiddleware, async (req, res) => {
     const userId = req.user.id;
     
     const [rows] = await pool.query(`
-      SELECT * FROM handibasket_profiles WHERE user_id = ?
+      SELECT hp.*, u.name, u.email, u.gender, u.nationality 
+      FROM handibasket_profiles hp 
+      JOIN users u ON hp.user_id = u.id 
+      WHERE hp.user_id = ?
     `, [userId]);
 
     if (rows.length === 0) {
       return res.status(404).json({ message: 'Profil non trouvé' });
     }
 
-    res.json(rows[0]);
+    const profile = rows[0];
+    
+    // Calculer l'âge à partir de birth_date
+    let age = null;
+    if (profile.birth_date) {
+      const birth = new Date(profile.birth_date);
+      const now = new Date();
+      age = now.getFullYear() - birth.getFullYear();
+    }
+
+    // Mapper les données vers le format attendu par Flutter
+    const mappedProfile = {
+      ...profile,
+      // Champs mappés pour Flutter
+      age: age,
+      classification: profile.cat,
+      nationality: profile.residence,
+      gender: profile.gender || 'non_specifie',
+      // Garder les champs originaux aussi
+      cat: profile.cat,
+      residence: profile.residence,
+      handicap_type: profile.handicap_type
+    };
+
+    res.json(mappedProfile);
   } catch (error) {
     console.error('Erreur lors de la récupération du profil handibasket:', error);
     res.status(500).json({ message: 'Erreur serveur' });
