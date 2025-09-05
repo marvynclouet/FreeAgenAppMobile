@@ -134,7 +134,7 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         profileData = data;
       });
-      
+
       // Debug: afficher les champs disponibles
       if (data.isNotEmpty) {
         print('Champs disponibles dans profileData:');
@@ -351,7 +351,7 @@ class _ProfilePageState extends State<ProfilePage> {
     String fieldName = field['name'] as String;
     String fieldLabel = field['label'] as String;
     String value = '';
-    
+
     print('DEBUG _buildViewField: $fieldName -> $fieldLabel');
 
     if (fieldName.contains('.')) {

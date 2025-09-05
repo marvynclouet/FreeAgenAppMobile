@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'services/profile_service.dart';
 import 'services/auth_service.dart';
 import 'messages_page.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'widgets/user_avatar.dart';
 import 'services/message_service.dart'; // Added import for MessageService
 
@@ -606,23 +605,6 @@ class PlayerDetailPage extends StatelessWidget {
     }
   }
 
-  Future<void> _sendEmail() async {
-    final email = player['email'] ?? '';
-    if (email.isEmpty) {
-      return;
-    }
-
-    final Uri emailUri = Uri(
-      scheme: 'mailto',
-      path: email,
-      query: 'subject=Contact depuis FreeAgent App',
-    );
-
-    if (await canLaunchUrl(emailUri)) {
-      await launchUrl(emailUri);
-    }
-  }
-
   Future<void> _sendMessage(BuildContext context) async {
     final messageController = TextEditingController();
     messageController.text =
@@ -746,60 +728,32 @@ class PlayerDetailPage extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // Boutons d'action
-            Row(
-              children: [
-                // Bouton Envoyer un email
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: player['email'] != null ? _sendEmail : null,
-                    icon: const Icon(Icons.email, color: Colors.white),
-                    label: const Text(
-                      'Email',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF9B5CFF),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
+            // Bouton d'action
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _sendMessage(context),
+                icon: const Icon(Icons.message, color: Colors.white),
+                label: const Text(
+                  'Envoyer un message',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
-                const SizedBox(width: 12),
-                // Bouton Envoyer un message
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _sendMessage(context),
-                    icon: const Icon(Icons.message, color: Colors.white),
-                    label: const Text(
-                      'Message',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-              ],
+              ),
             ),
             const SizedBox(height: 24),
 
             _buildInfoSection('Informations personnelles', [
-              _buildInfoRow('Email', player['email'] ?? 'Non spécifié'),
               _buildInfoRow('Âge', '${player['age']} ans'),
               _buildInfoRow('Genre', _formatGenderForDetail(player['gender'])),
               _buildInfoRow('Taille', '${player['height']} cm'),
