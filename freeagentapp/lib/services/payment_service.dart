@@ -3,10 +3,10 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'auth_service.dart';
+import 'config.dart';
 
 class PaymentService {
-  static const String baseUrl =
-      'https://freeagenappmobile-production.up.railway.app/api';
+  static String get baseUrl => ApiConfig.baseUrl;
   final AuthService _authService = AuthService();
 
   Future<Map<String, String>> _getHeaders() async {

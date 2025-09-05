@@ -3,10 +3,10 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart' as http_parser;
 import 'auth_service.dart';
+import 'config.dart';
 
 class ProfilePhotoService {
-  static const String baseUrl =
-      'https://freeagenappmobile-production.up.railway.app/api/upload';
+  static String get baseUrl => ApiConfig.uploadUrl;
   final AuthService _authService = AuthService();
 
   // Récupérer la photo de profil actuelle

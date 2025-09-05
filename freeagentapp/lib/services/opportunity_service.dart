@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'config.dart';
 
 enum OpportunityType {
   equipe_recherche_joueur, // Une équipe cherche un joueur
@@ -13,8 +14,7 @@ enum OpportunityType {
 }
 
 class OpportunityService {
-  static const String _baseUrl =
-      'https://freeagenappmobile-production.up.railway.app/api';
+  static String get _baseUrl => ApiConfig.baseUrl;
   static const String _tokenKey = 'auth_token';
 
   String _mapTypeForBackend(OpportunityType type) {

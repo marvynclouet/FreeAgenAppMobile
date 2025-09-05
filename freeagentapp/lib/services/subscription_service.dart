@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'auth_service.dart';
+import 'config.dart';
 
 class SubscriptionPlan {
   final int id;
@@ -172,8 +173,7 @@ class PlanLimits {
 }
 
 class SubscriptionService {
-  static const String baseUrl =
-      'https://freeagenappmobile-production.up.railway.app/api';
+  static String get baseUrl => ApiConfig.baseUrl;
   final AuthService _authService = AuthService();
 
   Future<Map<String, String>> _getHeaders() async {

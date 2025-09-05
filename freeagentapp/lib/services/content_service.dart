@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 import 'dart:io';
+import 'config.dart';
 
 class ContentService {
-  static const String baseUrl =
-      'https://freeagenappmobile-production.up.railway.app/api';
+  static String get baseUrl => ApiConfig.baseUrl;
   final AuthService _authService = AuthService();
 
   // Récupérer le fil d'actualités (posts + opportunités)

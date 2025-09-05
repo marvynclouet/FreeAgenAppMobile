@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'auth_service.dart';
+import 'config.dart';
 
 class MatchProfile {
   final String id;
@@ -112,8 +113,7 @@ class MatchingStats {
 }
 
 class MatchingService {
-  static const String baseUrl =
-      'https://freeagenappmobile-production.up.railway.app/api';
+  static String get baseUrl => ApiConfig.baseUrl;
   final AuthService _authService = AuthService();
 
   Future<Map<String, String>> _getHeaders() async {

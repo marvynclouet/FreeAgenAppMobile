@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart';
+import 'config.dart';
 
 class Message {
   final int id;
@@ -67,8 +68,7 @@ class Conversation {
 }
 
 class MessageService {
-  static const String baseUrl =
-      'https://freeagenappmobile-production.up.railway.app/api';
+  static String get baseUrl => ApiConfig.baseUrl;
   final AuthService _authService = AuthService();
 
   Future<String?> _getToken() async {
