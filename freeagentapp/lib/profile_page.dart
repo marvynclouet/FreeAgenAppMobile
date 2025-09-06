@@ -170,6 +170,9 @@ class _ProfilePageState extends State<ProfilePage> {
             // Pour tous les autres champs, utiliser les données du profil directement
             _controllers[key]?.text = data[key]?.toString() ?? '';
           }
+          
+          // Debug: afficher la valeur assignée
+          print('DEBUG _initializeControllers: $key = "${_controllers[key]?.text}"');
         }
       }
     } catch (e) {
@@ -378,6 +381,9 @@ class _ProfilePageState extends State<ProfilePage> {
         value = profileData?[fieldName]?.toString() ?? '';
       }
     }
+
+    // Debug: afficher la valeur trouvée
+    print('DEBUG _buildViewField: $fieldName = "$value"');
 
     print('DEBUG valeur trouvée pour $fieldName: "$value"');
 
