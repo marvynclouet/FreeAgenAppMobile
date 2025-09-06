@@ -46,7 +46,7 @@ async function testExistingHandibasketTeam() {
     const announcement = await axios.post(`${BASE_URL}/api/annonces`, {
       title: 'Recrutement joueur handibasket - Poste meneur',
       description: 'Notre équipe de handibasket de niveau national recherche un meneur expérimenté pour la saison 2024-2025. Nous cherchons un joueur motivé, avec de l\'expérience en handibasket et capable de diriger l\'équipe.',
-      type: 'equipe_recherche_joueur',
+      type: 'recrutement',
       requirements: 'Joueur handibasket de niveau régional minimum, poste meneur, expérience de 3 ans minimum, classification 1-2',
       salary_range: 'Selon expérience',
       location: 'Paris, Île-de-France'
@@ -58,7 +58,7 @@ async function testExistingHandibasketTeam() {
     // 4. Se connecter avec un joueur handibasket existant
     console.log('\n4. Connexion d\'un joueur handibasket...');
     const playerLogin = await axios.post(`${BASE_URL}/api/auth/login`, {
-      email: 'zgezgzg@zgehaahh.com',
+      email: 'joueur.test.handibasket@gmail.com',
       password: 'Test123'
     });
     
@@ -72,12 +72,18 @@ async function testExistingHandibasketTeam() {
       headers: { Authorization: `Bearer ${playerToken}` }
     });
     
-    console.log(`✅ ${playerMatches.data.length} matches trouvés pour le joueur:`);
-    playerMatches.data.forEach((match, index) => {
-      console.log(`   ${index + 1}. ${match.name} (${match.type}) - Score: ${match.compatibilityScore}%`);
-      console.log(`      Annonce: ${match.advertisement.title}`);
-      console.log(`      Raisons: ${match.reasons.join(', ')}`);
-    });
+    console.log('Réponse du matching:', JSON.stringify(playerMatches.data, null, 2));
+    
+    if (Array.isArray(playerMatches.data)) {
+      console.log(`✅ ${playerMatches.data.length} matches trouvés pour le joueur:`);
+      playerMatches.data.forEach((match, index) => {
+        console.log(`   ${index + 1}. ${match.name} (${match.type}) - Score: ${match.compatibilityScore}%`);
+        console.log(`      Annonce: ${match.advertisement.title}`);
+        console.log(`      Raisons: ${match.reasons.join(', ')}`);
+      });
+    } else {
+      console.log('❌ Réponse du matching invalide:', playerMatches.data);
+    }
 
     // 6. Tester le matching pour l'équipe
     console.log('\n6. Test du matching pour l\'équipe...');

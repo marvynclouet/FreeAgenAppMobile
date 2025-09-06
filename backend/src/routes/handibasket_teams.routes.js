@@ -284,7 +284,7 @@ router.get('/search', async (req, res) => {
     
     query += ' ORDER BY htp.level DESC, u.name';
     
-    const [rows] = await pool.query(query, params);
+    const [rows] = await pool.execute(query, params);
     
     // Mapper les données pour Flutter
     const mappedRows = rows.map(row => ({
