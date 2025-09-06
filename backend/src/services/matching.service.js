@@ -30,6 +30,10 @@ class MatchingService {
           // Une équipe cherche des joueurs qui correspondent à ses annonces
           return await this.findPlayersForTeamAds(userId, limit);
         
+        case 'handibasket_team':
+          // Une équipe handibasket cherche des joueurs handibasket qui correspondent à ses annonces
+          return await this.findHandibasketPlayersForTeamAds(userId, limit);
+        
         case 'coach_pro':
         case 'coach_basket':
           // Un coach cherche des annonces de coaching qui lui correspondent
@@ -60,20 +64,23 @@ class MatchingService {
         throw new Error('Profil handibasket introuvable');
       }
 
-      // Récupérer les annonces handibasket ouvertes
+      // Récupérer les annonces handibasket ouvertes (clubs et équipes handibasket)
       const query = `
         SELECT 
           a.id, a.title, a.description, a.requirements, a.salary_range, 
           a.location, a.created_at, a.user_id as team_user_id,
           u.name as team_name, u.email as team_email, u.profile_image_url as team_image,
-          cp.club_name, cp.level as team_level, cp.location as team_location
+          u.profile_type,
+          cp.club_name, cp.level as team_level, cp.location as team_location,
+          htp.team_name as handibasket_team_name, htp.city as handibasket_team_city, htp.level as handibasket_team_level
         FROM annonces a
         JOIN users u ON a.user_id = u.id
         LEFT JOIN club_profiles cp ON u.id = cp.user_id
-        WHERE (a.type = 'recrutement' OR a.type = 'coaching')
+        LEFT JOIN handibasket_team_profiles htp ON u.id = htp.user_id
+        WHERE (a.type = 'recrutement' OR a.type = 'coaching' OR a.type = 'equipe_recherche_joueur')
           AND a.status = 'open'
           AND a.user_id != ?
-          AND (a.title LIKE '%handibasket%' OR a.description LIKE '%handibasket%' OR a.requirements LIKE '%handibasket%')
+          AND (a.title LIKE '%handibasket%' OR a.description LIKE '%handibasket%' OR a.requirements LIKE '%handibasket%' OR u.profile_type = 'handibasket_team')
         ORDER BY a.created_at DESC
         LIMIT ?
       `;
@@ -84,15 +91,28 @@ class MatchingService {
       const matchesWithScores = await Promise.all(
         rows.map(async (ad) => {
           const compatibilityScore = this.calculateHandibasketAdCompatibility(playerProfile, ad);
-          return {
+          
+          // Déterminer le type et les informations selon le profil de l'équipe
+          let teamInfo = {
             id: ad.id.toString(),
-            type: 'club',
-            name: ad.team_name,
+            type: ad.profile_type === 'handibasket_team' ? 'handibasket_team' : 'club',
+            name: ad.profile_type === 'handibasket_team' ? ad.handibasket_team_name : ad.team_name,
             email: ad.team_email,
             image: ad.team_image,
-            club_name: ad.club_name,
-            level: ad.team_level,
-            location: ad.team_location || ad.location,
+            location: ad.profile_type === 'handibasket_team' ? ad.handibasket_team_city : (ad.team_location || ad.location),
+            level: ad.profile_type === 'handibasket_team' ? ad.handibasket_team_level : ad.team_level
+          };
+          
+          // Ajouter les informations spécifiques selon le type
+          if (ad.profile_type === 'handibasket_team') {
+            teamInfo.team_name = ad.handibasket_team_name;
+            teamInfo.city = ad.handibasket_team_city;
+          } else {
+            teamInfo.club_name = ad.club_name;
+          }
+          
+          return {
+            ...teamInfo,
             advertisement: {
               id: ad.id,
               title: ad.title,
@@ -180,6 +200,91 @@ class MatchingService {
 
     } catch (error) {
       console.error('Erreur lors de la recherche d\'annonces pour joueur:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Trouve les joueurs handibasket qui correspondent aux annonces d'une équipe handibasket
+   */
+  async findHandibasketPlayersForTeamAds(teamId, limit = 10) {
+    try {
+      // Récupérer les annonces de recrutement handibasket de l'équipe
+      const teamAdsQuery = `
+        SELECT id, title, description, requirements, salary_range, location
+        FROM annonces 
+        WHERE user_id = ? AND (type = 'recrutement' OR type = 'equipe_recherche_joueur') AND status = 'open'
+        ORDER BY created_at DESC
+        LIMIT 5
+      `;
+
+      const [teamAds] = await pool.execute(teamAdsQuery, [teamId.toString()]);
+      
+      if (teamAds.length === 0) {
+        return [];
+      }
+
+      // Récupérer tous les joueurs handibasket disponibles
+      const playersQuery = `
+        SELECT 
+          hp.*, u.name, u.email, u.profile_image_url, u.gender, u.nationality,
+          COALESCE(hp.position, 'polyvalent') as position,
+          COALESCE(hp.championship_level, 'non_specifie') as level,
+          COALESCE(TIMESTAMPDIFF(YEAR, hp.birth_date, CURDATE()), 25) as age,
+          COALESCE(hp.experience_years, 0) as experience_years,
+          COALESCE(hp.residence, 'France') as location
+        FROM handibasket_profiles hp
+        JOIN users u ON hp.user_id = u.id
+        WHERE hp.user_id != ?
+        LIMIT ?
+      `;
+
+      const [players] = await pool.execute(playersQuery, [teamId.toString(), (limit * 2).toString()]);
+
+      // Calculer le score de compatibilité pour chaque joueur avec chaque annonce
+      const matchesWithScores = [];
+
+      for (const player of players) {
+        let bestScore = 0;
+        let bestAd = null;
+        let bestReasons = [];
+
+        // Tester chaque annonce avec ce joueur
+        for (const ad of teamAds) {
+          const score = this.calculateHandibasketAdCompatibility(player, ad);
+          if (score > bestScore) {
+            bestScore = score;
+            bestAd = ad;
+            bestReasons = this.getHandibasketAdMatchReasons(player, ad, score);
+          }
+        }
+
+        if (bestScore > 30) { // Seuil minimum de compatibilité
+          matchesWithScores.push({
+            id: player.user_id.toString(),
+            type: 'handibasket',
+            name: player.name,
+            email: player.email,
+            image: player.profile_image_url,
+            position: player.position,
+            level: player.level,
+            age: player.age,
+            experience_years: player.experience_years,
+            handicap_type: player.handicap_type,
+            classification: player.cat,
+            bestMatchedAd: bestAd,
+            compatibilityScore: bestScore,
+            matchLevel: this.getMatchLevel(bestScore),
+            reasons: bestReasons
+          });
+        }
+      }
+
+      // Trier par score de compatibilité
+      return matchesWithScores.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
+
+    } catch (error) {
+      console.error('Erreur lors de la recherche de joueurs handibasket pour équipe:', error);
       throw error;
     }
   }
