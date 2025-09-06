@@ -82,6 +82,15 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Route de test
+router.get('/test', authMiddleware, async (req, res) => {
+  res.json({ 
+    message: 'Route de test fonctionne', 
+    userId: req.user.id,
+    userType: req.user.profile_type 
+  });
+});
+
 // Récupérer le profil de l'équipe connectée
 router.get('/profile', authMiddleware, async (req, res) => {
   try {
