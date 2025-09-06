@@ -189,7 +189,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
             updated_at = CURRENT_TIMESTAMP
         WHERE user_id = ?
       `, [
-        birth_date || (age ? `1990-01-01` : null), 
+        birth_date || (age ? `1990-01-01` : '1990-01-01'), 
         handicap_type || 'non_specifie', 
         cat || classification || 'a_definir', 
         residence || nationality || 'a_definir', 
