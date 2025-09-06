@@ -6,7 +6,7 @@ const authMiddleware = require('../middleware/auth.middleware');
 // Récupérer toutes les équipes handibasket
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    const [rows] = await pool.execute(`
       SELECT 
         u.id, u.name, u.email, u.gender, u.nationality,
         htp.team_name, htp.city, htp.region, htp.level, htp.division,
@@ -47,7 +47,7 @@ router.get('/:id', async (req, res) => {
   try {
     const teamId = req.params.id;
     
-    const [rows] = await pool.query(`
+    const [rows] = await pool.execute(`
       SELECT 
         u.id, u.name, u.email, u.gender, u.nationality,
         htp.*
@@ -87,7 +87,7 @@ router.get('/profile', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     
-    const [rows] = await pool.query(`
+    const [rows] = await pool.execute(`
       SELECT 
         u.id, u.name, u.email, u.gender, u.nationality,
         htp.*
@@ -153,14 +153,14 @@ router.put('/profile', authMiddleware, async (req, res) => {
     } = req.body;
 
     // Vérifier si le profil existe déjà
-    const [existingProfile] = await pool.query(
+    const [existingProfile] = await pool.execute(
       'SELECT * FROM handibasket_team_profiles WHERE user_id = ?',
       [userId]
     );
 
     if (existingProfile.length > 0) {
       // Mettre à jour le profil existant
-      await pool.query(`
+      await pool.execute(`
         UPDATE handibasket_team_profiles 
         SET team_name = ?, city = ?, region = ?, level = ?, division = ?,
             founded_year = ?, description = ?, achievements = ?, contact_person = ?,
@@ -198,7 +198,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
       ]);
     } else {
       // Créer un nouveau profil
-      await pool.query(`
+      await pool.execute(`
         INSERT INTO handibasket_team_profiles 
         (user_id, team_name, city, region, level, division, founded_year, description,
          achievements, contact_person, phone, email_contact, website, social_media,

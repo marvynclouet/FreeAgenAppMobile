@@ -10,8 +10,8 @@ async function testHandibasketTeamMatching() {
     console.log('1. Création d\'une équipe handibasket...');
     const teamRegistration = await axios.post(`${BASE_URL}/api/auth/register`, {
       name: 'Équipe Handibasket Test',
-      email: 'equipe.test@handibasket.com',
-      password: 'Test123!',
+      email: 'handiteam@gmail.com',
+      password: 'Test123',
       profile_type: 'handibasket_team'
     });
     
@@ -52,8 +52,8 @@ async function testHandibasketTeamMatching() {
     console.log('\n4. Création d\'un joueur handibasket...');
     const playerRegistration = await axios.post(`${BASE_URL}/api/auth/register`, {
       name: 'Joueur Test Handibasket',
-      email: 'joueur.test@handibasket.com',
-      password: 'Test123!',
+      email: 'joueur.test.handibasket@gmail.com',
+      password: 'Test123',
       profile_type: 'handibasket'
     });
     
