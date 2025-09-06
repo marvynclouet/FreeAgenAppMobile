@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db.config');
-const authMiddleware = require('../middleware/auth.middleware');
+const verifyToken = require('../middleware/auth.middleware');
 
 // Récupérer toutes les équipes handibasket
 router.get('/', async (req, res) => {
@@ -82,8 +82,16 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Route de test simple
+router.get('/simple-test', async (req, res) => {
+  res.json({ 
+    message: 'Route simple fonctionne',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Route de test
-router.get('/test', authMiddleware, async (req, res) => {
+router.get('/test', verifyToken, async (req, res) => {
   res.json({ 
     message: 'Route de test fonctionne', 
     userId: req.user.id,
@@ -92,7 +100,7 @@ router.get('/test', authMiddleware, async (req, res) => {
 });
 
 // Récupérer le profil de l'équipe connectée
-router.get('/profile', authMiddleware, async (req, res) => {
+router.get('/profile', verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
     console.log('🔍 Recherche du profil équipe pour userId:', userId);
@@ -136,7 +144,7 @@ router.get('/profile', authMiddleware, async (req, res) => {
 });
 
 // Créer ou mettre à jour le profil d'une équipe handibasket
-router.put('/profile', authMiddleware, async (req, res) => {
+router.put('/profile', verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const {
