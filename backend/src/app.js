@@ -25,6 +25,7 @@ const annoncesRoutes = require('./routes/annonces.routes');
 const messagesRoutes = require('./routes/messages.routes');
 const handibasketRoutes = require('./routes/handibasket.routes');
 const handibasketTeamsRoutes = require('./routes/handibasket_teams.routes');
+const adminRoutes = require('./routes/admin.routes');
 const subscriptionRoutes = require('./routes/subscription.routes');
 // const paymentRoutes = require('./routes/payment.routes'); // Désactivé temporairement
 const storeRoutes = require('./routes/store.routes');
@@ -51,6 +52,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/matching', matchingRoutes);
 app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/content', contentRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Route de healthcheck pour Railway
 app.get('/health', (req, res) => {
