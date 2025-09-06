@@ -109,7 +109,20 @@ router.get('/profile', authMiddleware, async (req, res) => {
       // Garder les champs originaux aussi
       cat: profile.cat,
       residence: profile.residence,
-      handicap_type: profile.handicap_type
+      handicap_type: profile.handicap_type,
+      position: profile.position,
+      championship_level: profile.championship_level,
+      height: profile.height,
+      weight: profile.weight,
+      passport_type: profile.passport_type,
+      experience_years: profile.experience_years,
+      level: profile.level,
+      stats: profile.stats,
+      achievements: profile.achievements,
+      video_url: profile.video_url,
+      bio: profile.bio,
+      club: profile.club,
+      coach: profile.coach
     };
 
     res.json(mappedProfile);
