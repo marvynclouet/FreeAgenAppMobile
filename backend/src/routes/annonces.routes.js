@@ -13,6 +13,8 @@ router.get('/', authMiddleware, async (req, res) => {
     // Déterminer le type d'annonces à afficher selon le profil utilisateur
     if (userProfileType === 'handibasket') {
       targetProfile = 'handibasket';
+    } else if (userProfileType === 'handibasket_team') {
+      targetProfile = 'handibasket';
     }
     
     console.log(`Récupération des annonces pour profil: ${userProfileType}, target: ${targetProfile}`);
@@ -65,9 +67,18 @@ router.post('/', authMiddleware, checkPremiumAccess('post_opportunities'), check
 
     // Déterminer le target_profile selon le profil de l'utilisateur qui crée l'annonce
     let targetProfile = 'player'; // Par défaut
-    if (userProfileType === 'club' && (title.toLowerCase().includes('handibasket') || description.toLowerCase().includes('handibasket'))) {
+    
+    if (type === 'joueur_recherche_club') {
+      // Un joueur handibasket recherche un club
+      targetProfile = 'handibasket_team';
+    } else if (type === 'equipe_recherche_joueur') {
+      // Une équipe handibasket recherche un joueur
+      targetProfile = 'handibasket';
+    } else if (userProfileType === 'club' && (title.toLowerCase().includes('handibasket') || description.toLowerCase().includes('handibasket'))) {
       targetProfile = 'handibasket';
     } else if (userProfileType === 'handibasket') {
+      targetProfile = 'handibasket';
+    } else if (userProfileType === 'handibasket_team') {
       targetProfile = 'handibasket';
     }
 
@@ -84,7 +95,7 @@ router.post('/', authMiddleware, checkPremiumAccess('post_opportunities'), check
     });
 
     // Vérifier que le type est valide
-    const validTypes = ['recrutement', 'coaching', 'consultation'];
+    const validTypes = ['recrutement', 'coaching', 'consultation', 'joueur_recherche_club', 'equipe_recherche_joueur'];
     if (!validTypes.includes(type)) {
       console.log('Erreur: Type d\'annonce invalide:', type);
       return res.status(400).json({ 

@@ -247,6 +247,90 @@ async function handleSubscriptionDeleted(subscription) {
   }
 }
 
+// POST /api/payments/activate-free-premium - Activer le premium gratuit en période de test
+router.post('/activate-free-premium', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Vérifier si l'utilisateur a déjà un abonnement actif
+    const [existingSub] = await pool.execute(`
+      SELECT * FROM subscriptions 
+      WHERE user_id = ? AND status = 'active' AND end_date > NOW()
+    `, [userId]);
+
+    if (existingSub.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Vous avez déjà un abonnement actif' 
+      });
+    }
+
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    try {
+      // Calculer les dates (1 an gratuit)
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setFullYear(endDate.getFullYear() + 1);
+
+      // Créer l'abonnement gratuit
+      await connection.execute(`
+        INSERT INTO subscriptions 
+        (user_id, subscription_type, price, duration_months, start_date, end_date, 
+         payment_method, status, is_test_period)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        userId,
+        'premium',
+        0,
+        12,
+        startDate,
+        endDate,
+        'test_period',
+        'active',
+        true
+      ]);
+
+      // Mettre à jour l'utilisateur
+      await connection.execute(`
+        UPDATE users 
+        SET subscription_type = 'premium', subscription_expiry = ?, is_premium = TRUE, 
+            subscription_created_at = ?
+        WHERE id = ?
+      `, [endDate, startDate, userId]);
+
+      // Réinitialiser les limites
+      await connection.execute(`
+        UPDATE user_limits 
+        SET applications_count = 0, opportunities_posted = 0, messages_sent = 0, 
+            last_reset_date = CURRENT_DATE
+        WHERE user_id = ?
+      `, [userId]);
+
+      await connection.commit();
+      
+      console.log(`Premium gratuit activé pour l'utilisateur ${userId}`);
+      res.json({ 
+        success: true, 
+        message: 'Premium activé gratuitement pour la période de test',
+        expiry: endDate
+      });
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Erreur lors de l\'activation du premium gratuit:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur serveur' 
+    });
+  }
+});
+
 // GET /api/payments/plans - Récupérer les plans avec prix Stripe
 router.get('/plans', async (req, res) => {
   try {
