@@ -78,6 +78,21 @@ router.post('/register', async (req, res) => {
         );
         break;
         
+      case 'handibasket_team':
+        // Inscription équipe handibasket avec valeurs par défaut
+        await pool.query(
+          `INSERT INTO handibasket_team_profiles (
+            user_id, team_name, city, level
+          ) VALUES (?, ?, ?, ?)`,
+          [
+            userId,
+            name || 'Nom de l\'équipe',
+            'Ville',
+            'Regional'
+          ]
+        );
+        break;
+        
       case 'coach_pro':
         await pool.query(
           'INSERT INTO coach_pro_profiles (user_id) VALUES (?)',

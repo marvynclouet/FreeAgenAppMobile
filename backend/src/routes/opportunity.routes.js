@@ -3,16 +3,39 @@ const router = express.Router();
 const db = require('../config/db.config');
 const authMiddleware = require('../middleware/auth.middleware');
 
-// Récupérer toutes les opportunités (depuis annonces)
+// Récupérer toutes les opportunités (depuis annonces et opportunities)
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const [opportunities] = await db.execute(`
-      SELECT a.*, u.name as user_name, u.email as user_email
-      FROM annonces a
-      JOIN users u ON a.user_id = u.id
-      WHERE a.status = 'open'
-      ORDER BY a.created_at DESC
-    `);
+    const { handibasket_only } = req.query;
+    
+    let query = `
+      SELECT 
+        o.id, o.title, o.description, o.type, o.requirements, o.salary_range,
+        o.location, o.status, o.created_at, o.updated_at,
+        o.handibasket_specific, o.handicap_types, o.classification_required,
+        o.experience_required, o.position_required, o.level_required,
+        u.name as team_name, u.email as team_email,
+        CASE 
+          WHEN u.profile_type = 'handibasket_team' THEN htp.team_name
+          ELSE u.name
+        END as display_name,
+        CASE 
+          WHEN u.profile_type = 'handibasket_team' THEN htp.city
+          ELSE 'Non spécifié'
+        END as team_city
+      FROM opportunities o
+      JOIN users u ON o.team_id = u.id
+      LEFT JOIN handibasket_team_profiles htp ON u.id = htp.user_id
+      WHERE o.status = 'open'
+    `;
+    
+    if (handibasket_only === 'true') {
+      query += ' AND o.handibasket_specific = TRUE';
+    }
+    
+    query += ' ORDER BY o.created_at DESC';
+    
+    const [opportunities] = await db.execute(query);
     res.json(opportunities);
   } catch (error) {
     console.error('Erreur lors de la récupération des opportunités:', error);
