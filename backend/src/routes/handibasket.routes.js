@@ -185,8 +185,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
         SET birth_date = ?, handicap_type = ?, cat = ?, residence = ?, 
             club = ?, coach = ?, profession = ?, position = ?, championship_level = ?,
             height = ?, weight = ?, passport_type = ?, experience_years = ?, 
-            level = ?, stats = ?, achievements = ?, video_url = ?, bio = ?,
-            updated_at = CURRENT_TIMESTAMP
+            level = ?, stats = ?, achievements = ?, video_url = ?, bio = ?
         WHERE user_id = ?
       `, [
         birth_date || (age ? `1990-01-01` : '1990-01-01'), 
