@@ -146,6 +146,9 @@ router.get('/debug', authMiddleware, async (req, res) => {
 router.put('/profile', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
+    console.log('🔧 Mise à jour profil handibasket pour user_id:', userId);
+    console.log('📝 Données reçues:', JSON.stringify(req.body, null, 2));
+    
     const {
       birth_date,
       handicap_type,
@@ -179,6 +182,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
     );
 
     if (existingProfile.length > 0) {
+      console.log('📝 Profil existant trouvé, mise à jour...');
       // Mettre à jour le profil existant
       await pool.query(`
         UPDATE handibasket_profiles 
@@ -208,7 +212,9 @@ router.put('/profile', authMiddleware, async (req, res) => {
         bio,
         userId
       ]);
+      console.log('✅ Profil mis à jour avec succès');
     } else {
+      console.log('📝 Aucun profil existant, création...');
       // Créer un nouveau profil
       await pool.query(`
         INSERT INTO handibasket_profiles 
@@ -240,7 +246,8 @@ router.put('/profile', authMiddleware, async (req, res) => {
 
     res.json({ message: 'Profil mis à jour avec succès' });
   } catch (error) {
-    console.error('Erreur lors de la mise à jour du profil handibasket:', error);
+    console.error('❌ Erreur lors de la mise à jour du profil handibasket:', error);
+    console.error('❌ Stack trace:', error.stack);
     res.status(500).json({ message: 'Erreur serveur' });
   }
 });
