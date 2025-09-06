@@ -58,46 +58,23 @@ const checkPremiumAccess = (requiredFeature) => {
         }
       }
       
+      // PÉRIODE DE TEST : Toutes les restrictions sont levées pour tous les utilisateurs
       // Vérifier l'accès basé sur la fonctionnalité requise
       switch (requiredFeature) {
         case 'post_opportunities':
-          if (!planLimits.can_post_opportunities) {
-            return res.status(403).json({ 
-              message: 'Fonctionnalité réservée aux abonnés premium',
-              feature: 'post_opportunities',
-              subscription_required: true
-            });
-          }
+          // Période de test : accès libre à tous
           break;
           
         case 'messaging':
-          if (user.subscription_type === 'free' && !user.is_premium) {
-            return res.status(403).json({ 
-              message: 'Messagerie réservée aux abonnés premium',
-              feature: 'messaging',
-              subscription_required: true
-            });
-          }
+          // Période de test : accès libre à tous
           break;
           
         case 'profile_boost':
-          if (!planLimits.has_profile_boost) {
-            return res.status(403).json({ 
-              message: 'Mise en avant du profil réservée aux abonnés Pro',
-              feature: 'profile_boost',
-              subscription_required: true
-            });
-          }
+          // Période de test : accès libre à tous
           break;
           
         case 'priority_support':
-          if (!planLimits.has_priority_support) {
-            return res.status(403).json({ 
-              message: 'Support prioritaire réservé aux abonnés Pro',
-              feature: 'priority_support',
-              subscription_required: true
-            });
-          }
+          // Période de test : accès libre à tous
           break;
       }
       
@@ -190,22 +167,24 @@ const checkUsageLimit = (limitType) => {
           break;
       }
       
+      // PÉRIODE DE TEST : Toutes les limites sont levées
       // Si la limite est illimitée (-1), laisser passer
       if (maxLimit === -1) {
         next();
         return;
       }
       
+      // PÉRIODE DE TEST : Ignorer toutes les limites
       // Vérifier si la limite est atteinte
-      if (currentCount >= maxLimit) {
-        return res.status(403).json({
-          message: `Limite de ${limitName} atteinte pour votre plan`,
-          current: currentCount,
-          limit: maxLimit,
-          subscription_type: subscriptionType,
-          upgrade_required: true
-        });
-      }
+      // if (currentCount >= maxLimit) {
+      //   return res.status(403).json({
+      //     message: `Limite de ${limitName} atteinte pour votre plan`,
+      //     current: currentCount,
+      //     limit: maxLimit,
+      //     subscription_type: subscriptionType,
+      //     upgrade_required: true
+      //   });
+      // }
       
       // Ajouter les informations au request
       req.user.usage = {
@@ -272,13 +251,14 @@ const checkNotificationAccess = async (req, res, next) => {
     
     const user = userRows[0];
     
+    // PÉRIODE DE TEST : Tous les utilisateurs peuvent voir les notifications
     // Les utilisateurs gratuits ne peuvent pas voir les notifications
-    if (user.subscription_type === 'free') {
-      return res.status(403).json({
-        message: 'Notifications réservées aux abonnés premium',
-        subscription_required: true
-      });
-    }
+    // if (user.subscription_type === 'free') {
+    //   return res.status(403).json({
+    //     message: 'Notifications réservées aux abonnés premium',
+    //     subscription_required: true
+    //   });
+    // }
     
     next();
     
