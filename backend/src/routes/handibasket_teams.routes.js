@@ -6,7 +6,7 @@ const verifyToken = require('../middleware/auth.middleware');
 // Routes spécifiques AVANT les routes avec paramètres
 
 // Route de test simple
-router.get('/simple-test', async (req, res) => {
+router.get('/api/test', async (req, res) => {
   res.json({ 
     message: 'Route simple fonctionne',
     timestamp: new Date().toISOString()
@@ -14,7 +14,7 @@ router.get('/simple-test', async (req, res) => {
 });
 
 // Route de test
-router.get('/test', verifyToken, async (req, res) => {
+router.get('/api/test-auth', verifyToken, async (req, res) => {
   res.json({ 
     message: 'Route de test fonctionne', 
     userId: req.user.id,
@@ -170,8 +170,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Récupérer une équipe handibasket spécifique (DOIT être en dernier)
-router.get('/:id', async (req, res) => {
+// Récupérer une équipe handibasket spécifique par ID
+router.get('/team/:id', async (req, res) => {
   try {
     const teamId = req.params.id;
     
