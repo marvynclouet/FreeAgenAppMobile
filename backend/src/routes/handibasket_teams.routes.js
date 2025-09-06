@@ -86,6 +86,7 @@ router.get('/:id', async (req, res) => {
 router.get('/profile', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
+    console.log('🔍 Recherche du profil équipe pour userId:', userId);
     
     const [rows] = await pool.execute(`
       SELECT 
@@ -95,6 +96,9 @@ router.get('/profile', authMiddleware, async (req, res) => {
       JOIN handibasket_team_profiles htp ON u.id = htp.user_id
       WHERE u.id = ? AND u.profile_type = 'handibasket_team'
     `, [userId]);
+
+    console.log('🔍 Résultat de la requête:', rows.length, 'lignes trouvées');
+    console.log('🔍 Données:', rows);
 
     if (rows.length === 0) {
       return res.status(404).json({ message: 'Profil d\'équipe non trouvé' });
