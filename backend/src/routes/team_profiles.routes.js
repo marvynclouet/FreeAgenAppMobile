@@ -3,27 +3,8 @@ const router = express.Router();
 const pool = require('../config/db.config');
 const verifyToken = require('../middleware/auth.middleware');
 
-// Routes spécifiques AVANT les routes avec paramètres
-
-// Route de test simple
-router.get('/api/test', async (req, res) => {
-  res.json({ 
-    message: 'Route simple fonctionne',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Route de test
-router.get('/api/test-auth', verifyToken, async (req, res) => {
-  res.json({ 
-    message: 'Route de test fonctionne', 
-    userId: req.user.id,
-    userType: req.user.profile_type 
-  });
-});
-
 // Récupérer le profil de l'équipe connectée
-router.get('/my-profile', verifyToken, async (req, res) => {
+router.get('/profile', verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
     console.log('🔍 Recherche du profil équipe pour userId:', userId);
@@ -67,7 +48,7 @@ router.get('/my-profile', verifyToken, async (req, res) => {
 });
 
 // Rechercher des équipes handibasket
-router.get('/find-teams', async (req, res) => {
+router.get('/search', async (req, res) => {
   try {
     const { city, level, region, keyword } = req.query;
     
@@ -132,7 +113,7 @@ router.get('/find-teams', async (req, res) => {
 });
 
 // Récupérer toutes les équipes handibasket
-router.get('/all-teams', async (req, res) => {
+router.get('/all', async (req, res) => {
   try {
     const [rows] = await pool.execute(`
       SELECT 
@@ -170,48 +151,8 @@ router.get('/all-teams', async (req, res) => {
   }
 });
 
-// Récupérer une équipe handibasket spécifique par ID
-router.get('/team/:id', async (req, res) => {
-  try {
-    const teamId = req.params.id;
-    
-    const [rows] = await pool.execute(`
-      SELECT 
-        u.id, u.name, u.email, u.gender, u.nationality,
-        htp.*
-      FROM users u
-      JOIN handibasket_team_profiles htp ON u.id = htp.user_id
-      WHERE u.id = ? AND u.profile_type = 'handibasket_team'
-    `, [teamId]);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ message: 'Équipe non trouvée' });
-    }
-
-    const team = rows[0];
-    
-    // Mapper les données vers le format attendu par Flutter
-    const mappedTeam = {
-      ...team,
-      // Champs mappés pour Flutter
-      name: team.team_name,
-      // Garder les champs originaux aussi
-      team_name: team.team_name,
-      city: team.city,
-      region: team.region,
-      level: team.level,
-      division: team.division
-    };
-
-    res.json(mappedTeam);
-  } catch (error) {
-    console.error('Erreur lors de la récupération de l\'équipe handibasket:', error);
-    res.status(500).json({ message: 'Erreur serveur' });
-  }
-});
-
 // Créer ou mettre à jour le profil d'une équipe handibasket
-router.put('/my-profile', verifyToken, async (req, res) => {
+router.put('/profile', verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const {
