@@ -3,84 +3,7 @@ const router = express.Router();
 const pool = require('../config/db.config');
 const verifyToken = require('../middleware/auth.middleware');
 
-// Récupérer toutes les équipes handibasket
-router.get('/', async (req, res) => {
-  try {
-    const [rows] = await pool.execute(`
-      SELECT 
-        u.id, u.name, u.email, u.gender, u.nationality,
-        htp.team_name, htp.city, htp.region, htp.level, htp.division,
-        htp.founded_year, htp.description, htp.achievements,
-        htp.contact_person, htp.phone, htp.email_contact, htp.website,
-        htp.facilities, htp.training_schedule, htp.recruitment_needs,
-        htp.budget_range, htp.accommodation_offered, htp.transport_offered,
-        htp.medical_support, htp.player_requirements,
-        htp.created_at, htp.updated_at
-      FROM users u
-      JOIN handibasket_team_profiles htp ON u.id = htp.user_id
-      WHERE u.profile_type = 'handibasket_team'
-      ORDER BY htp.level DESC, u.name
-    `);
-
-    // Mapper les données pour Flutter
-    const mappedRows = rows.map(row => ({
-      ...row,
-      // Champs mappés pour Flutter
-      name: row.team_name,
-      // Garder les champs originaux aussi
-      team_name: row.team_name,
-      city: row.city,
-      region: row.region,
-      level: row.level,
-      division: row.division
-    }));
-
-    res.json(mappedRows);
-  } catch (error) {
-    console.error('Erreur lors de la récupération des équipes handibasket:', error);
-    res.status(500).json({ message: 'Erreur serveur' });
-  }
-});
-
-// Récupérer une équipe handibasket spécifique
-router.get('/:id', async (req, res) => {
-  try {
-    const teamId = req.params.id;
-    
-    const [rows] = await pool.execute(`
-      SELECT 
-        u.id, u.name, u.email, u.gender, u.nationality,
-        htp.*
-      FROM users u
-      JOIN handibasket_team_profiles htp ON u.id = htp.user_id
-      WHERE u.id = ? AND u.profile_type = 'handibasket_team'
-    `, [teamId]);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ message: 'Équipe non trouvée' });
-    }
-
-    const team = rows[0];
-    
-    // Mapper les données vers le format attendu par Flutter
-    const mappedTeam = {
-      ...team,
-      // Champs mappés pour Flutter
-      name: team.team_name,
-      // Garder les champs originaux aussi
-      team_name: team.team_name,
-      city: team.city,
-      region: team.region,
-      level: team.level,
-      division: team.division
-    };
-
-    res.json(mappedTeam);
-  } catch (error) {
-    console.error('Erreur lors de la récupération de l\'équipe handibasket:', error);
-    res.status(500).json({ message: 'Erreur serveur' });
-  }
-});
+// Routes spécifiques AVANT les routes avec paramètres
 
 // Route de test simple
 router.get('/simple-test', async (req, res) => {
@@ -139,6 +62,150 @@ router.get('/profile', verifyToken, async (req, res) => {
     res.json(mappedTeam);
   } catch (error) {
     console.error('Erreur lors de la récupération du profil d\'équipe handibasket:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Rechercher des équipes handibasket
+router.get('/search', async (req, res) => {
+  try {
+    const { city, level, region, keyword } = req.query;
+    
+    let query = `
+      SELECT 
+        u.id, u.name, u.email, u.gender, u.nationality,
+        htp.team_name, htp.city, htp.region, htp.level, htp.division,
+        htp.founded_year, htp.description, htp.achievements,
+        htp.contact_person, htp.phone, htp.email_contact, htp.website,
+        htp.facilities, htp.training_schedule, htp.recruitment_needs,
+        htp.budget_range, htp.accommodation_offered, htp.transport_offered,
+        htp.medical_support, htp.player_requirements
+      FROM users u
+      JOIN handibasket_team_profiles htp ON u.id = htp.user_id
+      WHERE u.profile_type = 'handibasket_team'
+    `;
+    
+    const params = [];
+    
+    if (city) {
+      query += ' AND htp.city LIKE ?';
+      params.push(`%${city}%`);
+    }
+    
+    if (level) {
+      query += ' AND htp.level = ?';
+      params.push(level);
+    }
+    
+    if (region) {
+      query += ' AND htp.region LIKE ?';
+      params.push(`%${region}%`);
+    }
+    
+    if (keyword) {
+      query += ' AND (htp.team_name LIKE ? OR htp.description LIKE ? OR htp.recruitment_needs LIKE ?)';
+      params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
+    }
+    
+    query += ' ORDER BY htp.level DESC, u.name';
+    
+    const [rows] = await pool.execute(query, params);
+    
+    // Mapper les données pour Flutter
+    const mappedRows = rows.map(row => ({
+      ...row,
+      // Champs mappés pour Flutter
+      name: row.team_name,
+      // Garder les champs originaux aussi
+      team_name: row.team_name,
+      city: row.city,
+      region: row.region,
+      level: row.level,
+      division: row.division
+    }));
+
+    res.json(mappedRows);
+  } catch (error) {
+    console.error('Erreur lors de la recherche d\'équipes handibasket:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Récupérer toutes les équipes handibasket
+router.get('/', async (req, res) => {
+  try {
+    const [rows] = await pool.execute(`
+      SELECT 
+        u.id, u.name, u.email, u.gender, u.nationality,
+        htp.team_name, htp.city, htp.region, htp.level, htp.division,
+        htp.founded_year, htp.description, htp.achievements,
+        htp.contact_person, htp.phone, htp.email_contact, htp.website,
+        htp.facilities, htp.training_schedule, htp.recruitment_needs,
+        htp.budget_range, htp.accommodation_offered, htp.transport_offered,
+        htp.medical_support, htp.player_requirements,
+        htp.created_at, htp.updated_at
+      FROM users u
+      JOIN handibasket_team_profiles htp ON u.id = htp.user_id
+      WHERE u.profile_type = 'handibasket_team'
+      ORDER BY htp.level DESC, u.name
+    `);
+
+    // Mapper les données pour Flutter
+    const mappedRows = rows.map(row => ({
+      ...row,
+      // Champs mappés pour Flutter
+      name: row.team_name,
+      // Garder les champs originaux aussi
+      team_name: row.team_name,
+      city: row.city,
+      region: row.region,
+      level: row.level,
+      division: row.division
+    }));
+
+    res.json(mappedRows);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des équipes handibasket:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Récupérer une équipe handibasket spécifique (DOIT être en dernier)
+router.get('/:id', async (req, res) => {
+  try {
+    const teamId = req.params.id;
+    
+    const [rows] = await pool.execute(`
+      SELECT 
+        u.id, u.name, u.email, u.gender, u.nationality,
+        htp.*
+      FROM users u
+      JOIN handibasket_team_profiles htp ON u.id = htp.user_id
+      WHERE u.id = ? AND u.profile_type = 'handibasket_team'
+    `, [teamId]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Équipe non trouvée' });
+    }
+
+    const team = rows[0];
+    
+    // Mapper les données vers le format attendu par Flutter
+    const mappedTeam = {
+      ...team,
+      // Champs mappés pour Flutter
+      name: team.team_name,
+      // Garder les champs originaux aussi
+      team_name: team.team_name,
+      city: team.city,
+      region: team.region,
+      level: team.level,
+      division: team.division
+    };
+
+    res.json(mappedTeam);
+  } catch (error) {
+    console.error('Erreur lors de la récupération de l\'équipe handibasket:', error);
     res.status(500).json({ message: 'Erreur serveur' });
   }
 });
@@ -258,71 +325,6 @@ router.put('/profile', verifyToken, async (req, res) => {
     res.json({ message: 'Profil d\'équipe handibasket mis à jour avec succès' });
   } catch (error) {
     console.error('Erreur lors de la mise à jour du profil d\'équipe handibasket:', error);
-    res.status(500).json({ message: 'Erreur serveur' });
-  }
-});
-
-// Rechercher des équipes handibasket
-router.get('/search', async (req, res) => {
-  try {
-    const { city, level, region, keyword } = req.query;
-    
-    let query = `
-      SELECT 
-        u.id, u.name, u.email, u.gender, u.nationality,
-        htp.team_name, htp.city, htp.region, htp.level, htp.division,
-        htp.founded_year, htp.description, htp.achievements,
-        htp.contact_person, htp.phone, htp.email_contact, htp.website,
-        htp.facilities, htp.training_schedule, htp.recruitment_needs,
-        htp.budget_range, htp.accommodation_offered, htp.transport_offered,
-        htp.medical_support, htp.player_requirements
-      FROM users u
-      JOIN handibasket_team_profiles htp ON u.id = htp.user_id
-      WHERE u.profile_type = 'handibasket_team'
-    `;
-    
-    const params = [];
-    
-    if (city) {
-      query += ' AND htp.city LIKE ?';
-      params.push(`%${city}%`);
-    }
-    
-    if (level) {
-      query += ' AND htp.level = ?';
-      params.push(level);
-    }
-    
-    if (region) {
-      query += ' AND htp.region LIKE ?';
-      params.push(`%${region}%`);
-    }
-    
-    if (keyword) {
-      query += ' AND (htp.team_name LIKE ? OR htp.description LIKE ? OR htp.recruitment_needs LIKE ?)';
-      params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
-    }
-    
-    query += ' ORDER BY htp.level DESC, u.name';
-    
-    const [rows] = await pool.execute(query, params);
-    
-    // Mapper les données pour Flutter
-    const mappedRows = rows.map(row => ({
-      ...row,
-      // Champs mappés pour Flutter
-      name: row.team_name,
-      // Garder les champs originaux aussi
-      team_name: row.team_name,
-      city: row.city,
-      region: row.region,
-      level: row.level,
-      division: row.division
-    }));
-
-    res.json(mappedRows);
-  } catch (error) {
-    console.error('Erreur lors de la recherche d\'équipes handibasket:', error);
     res.status(500).json({ message: 'Erreur serveur' });
   }
 });
