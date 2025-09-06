@@ -4,7 +4,7 @@ const pool = require('../config/db.config');
 const verifyToken = require('../middleware/auth.middleware');
 
 // Récupérer le profil de l'équipe connectée
-router.get('/profile', verifyToken, async (req, res) => {
+router.get('/my-profile', verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
     console.log('🔍 Recherche du profil équipe pour userId:', userId);
@@ -47,112 +47,8 @@ router.get('/profile', verifyToken, async (req, res) => {
   }
 });
 
-// Rechercher des équipes handibasket
-router.get('/search', async (req, res) => {
-  try {
-    const { city, level, region, keyword } = req.query;
-    
-    let query = `
-      SELECT 
-        u.id, u.name, u.email, u.gender, u.nationality,
-        htp.team_name, htp.city, htp.region, htp.level, htp.division,
-        htp.founded_year, htp.description, htp.achievements,
-        htp.contact_person, htp.phone, htp.email_contact, htp.website,
-        htp.facilities, htp.training_schedule, htp.recruitment_needs,
-        htp.budget_range, htp.accommodation_offered, htp.transport_offered,
-        htp.medical_support, htp.player_requirements
-      FROM users u
-      JOIN handibasket_team_profiles htp ON u.id = htp.user_id
-      WHERE u.profile_type = 'handibasket_team'
-    `;
-    
-    const params = [];
-    
-    if (city) {
-      query += ' AND htp.city LIKE ?';
-      params.push(`%${city}%`);
-    }
-    
-    if (level) {
-      query += ' AND htp.level = ?';
-      params.push(level);
-    }
-    
-    if (region) {
-      query += ' AND htp.region LIKE ?';
-      params.push(`%${region}%`);
-    }
-    
-    if (keyword) {
-      query += ' AND (htp.team_name LIKE ? OR htp.description LIKE ? OR htp.recruitment_needs LIKE ?)';
-      params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
-    }
-    
-    query += ' ORDER BY htp.level DESC, u.name';
-    
-    const [rows] = await pool.execute(query, params);
-    
-    // Mapper les données pour Flutter
-    const mappedRows = rows.map(row => ({
-      ...row,
-      // Champs mappés pour Flutter
-      name: row.team_name,
-      // Garder les champs originaux aussi
-      team_name: row.team_name,
-      city: row.city,
-      region: row.region,
-      level: row.level,
-      division: row.division
-    }));
-
-    res.json(mappedRows);
-  } catch (error) {
-    console.error('Erreur lors de la recherche d\'équipes handibasket:', error);
-    res.status(500).json({ message: 'Erreur serveur' });
-  }
-});
-
-// Récupérer toutes les équipes handibasket
-router.get('/all', async (req, res) => {
-  try {
-    const [rows] = await pool.execute(`
-      SELECT 
-        u.id, u.name, u.email, u.gender, u.nationality,
-        htp.team_name, htp.city, htp.region, htp.level, htp.division,
-        htp.founded_year, htp.description, htp.achievements,
-        htp.contact_person, htp.phone, htp.email_contact, htp.website,
-        htp.facilities, htp.training_schedule, htp.recruitment_needs,
-        htp.budget_range, htp.accommodation_offered, htp.transport_offered,
-        htp.medical_support, htp.player_requirements,
-        htp.created_at, htp.updated_at
-      FROM users u
-      JOIN handibasket_team_profiles htp ON u.id = htp.user_id
-      WHERE u.profile_type = 'handibasket_team'
-      ORDER BY htp.level DESC, u.name
-    `);
-
-    // Mapper les données pour Flutter
-    const mappedRows = rows.map(row => ({
-      ...row,
-      // Champs mappés pour Flutter
-      name: row.team_name,
-      // Garder les champs originaux aussi
-      team_name: row.team_name,
-      city: row.city,
-      region: row.region,
-      level: row.level,
-      division: row.division
-    }));
-
-    res.json(mappedRows);
-  } catch (error) {
-    console.error('Erreur lors de la récupération des équipes handibasket:', error);
-    res.status(500).json({ message: 'Erreur serveur' });
-  }
-});
-
 // Créer ou mettre à jour le profil d'une équipe handibasket
-router.put('/profile', verifyToken, async (req, res) => {
+router.put('/my-profile', verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const {

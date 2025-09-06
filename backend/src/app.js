@@ -25,6 +25,7 @@ const annoncesRoutes = require('./routes/annonces.routes');
 const messagesRoutes = require('./routes/messages.routes');
 const handibasketRoutes = require('./routes/handibasket.routes');
 const handibasketTeamsRoutes = require('./routes/handibasket_teams.routes');
+const teamProfilesRoutes = require('./routes/team_profiles.routes');
 const adminRoutes = require('./routes/admin.routes');
 const subscriptionRoutes = require('./routes/subscription.routes');
 // const paymentRoutes = require('./routes/payment.routes'); // Désactivé temporairement
@@ -45,6 +46,7 @@ app.use('/api/annonces', annoncesRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/handibasket', handibasketRoutes);
 app.use('/api/handibasket-teams', handibasketTeamsRoutes);
+app.use('/api/team-profiles', teamProfilesRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 // app.use('/api/payments', paymentRoutes); // Désactivé temporairement
 app.use('/api/store', storeRoutes);
