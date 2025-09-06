@@ -171,7 +171,7 @@ router.get('/all-teams', async (req, res) => {
 });
 
 // Récupérer une équipe handibasket spécifique par ID
-router.get('/team/:id', async (req, res) => {
+router.get('/get-team/:id', async (req, res) => {
   try {
     const teamId = req.params.id;
     
