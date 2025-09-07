@@ -334,50 +334,56 @@ class SubscriptionService {
   // Vérifier si l'utilisateur peut effectuer une action
   Future<bool> canPerformAction(String action) async {
     try {
-      final status = await getSubscriptionStatus();
+      // PÉRIODE DE TEST : Tous les utilisateurs peuvent effectuer toutes les actions
+      return true;
 
-      switch (action) {
-        case 'post_opportunities':
-          return status.limits.plan.canPostOpportunities;
-        case 'messaging':
-          return !status.isFree;
-        case 'profile_boost':
-          return status.limits.plan.hasProfileBoost;
-        case 'priority_support':
-          return status.limits.plan.hasPrioritySupport;
-        default:
-          return false;
-      }
+      // Code original commenté pour la période de test
+      // final status = await getSubscriptionStatus();
+      // switch (action) {
+      //   case 'post_opportunities':
+      //     return status.limits.plan.canPostOpportunities;
+      //   case 'messaging':
+      //     return !status.isFree;
+      //   case 'profile_boost':
+      //     return status.limits.plan.hasProfileBoost;
+      //   case 'priority_support':
+      //     return status.limits.plan.hasPrioritySupport;
+      //   default:
+      //     return false;
+      // }
     } catch (e) {
-      return false;
+      return true; // En cas d'erreur, permettre l'action pendant la période de test
     }
   }
 
   // Vérifier si l'utilisateur a atteint sa limite pour une action
   Future<bool> hasReachedLimit(String limitType) async {
     try {
-      final limits = await getUsageLimits();
-      final current = limits['current'];
-      final plan = limits['plan'];
-
-      switch (limitType) {
-        case 'applications':
-          final maxApplications = plan['max_applications'];
-          if (maxApplications == -1) return false;
-          return current['applications_count'] >= maxApplications;
-        case 'opportunities':
-          final maxOpportunities = plan['max_opportunities'];
-          if (maxOpportunities == -1) return false;
-          return current['opportunities_posted'] >= maxOpportunities;
-        case 'messages':
-          final maxMessages = plan['max_messages'];
-          if (maxMessages == -1) return false;
-          return current['messages_sent'] >= maxMessages;
-        default:
-          return false;
-      }
-    } catch (e) {
+      // PÉRIODE DE TEST : Aucune limite n'est appliquée
       return false;
+
+      // Code original commenté pour la période de test
+      // final limits = await getUsageLimits();
+      // final current = limits['current'];
+      // final plan = limits['plan'];
+      // switch (limitType) {
+      //   case 'applications':
+      //     final maxApplications = plan['max_applications'];
+      //     if (maxApplications == -1) return false;
+      //     return current['applications_count'] >= maxApplications;
+      //   case 'opportunities':
+      //     final maxOpportunities = plan['max_opportunities'];
+      //     if (maxOpportunities == -1) return false;
+      //     return current['opportunities_posted'] >= maxOpportunities;
+      //   case 'messages':
+      //     final maxMessages = plan['max_messages'];
+      //     if (maxMessages == -1) return false;
+      //     return current['messages_sent'] >= maxMessages;
+      //   default:
+      //     return false;
+      // }
+    } catch (e) {
+      return false; // En cas d'erreur, ne pas bloquer pendant la période de test
     }
   }
 

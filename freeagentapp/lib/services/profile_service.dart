@@ -113,12 +113,29 @@ class ProfileService {
 
     return {
       'birth_date': birthDate,
-      'handicap_type': 'moteur', // Valeur par défaut
+      'handicap_type': flutterData['handicap_type']?.toString() ?? 'moteur',
       'cat': flutterData['classification']?.toString() ?? 'a_definir',
-      'residence': flutterData['nationality'] ?? 'a_definir',
-      'profession': 'a_definir',
-      'club': null,
-      'coach': null,
+      'residence': flutterData['nationality']?.toString() ?? 'a_definir',
+      'profession': flutterData['profession']?.toString() ?? 'a_definir',
+      'club': flutterData['club']?.toString(),
+      'coach': flutterData['coach']?.toString(),
+      'position': flutterData['position']?.toString() ?? 'polyvalent',
+      'championship_level':
+          flutterData['championship_level']?.toString() ?? 'non_specifie',
+      'passport_type': flutterData['passport_type']?.toString(),
+      'height': flutterData['height'] != null
+          ? int.tryParse(flutterData['height'].toString())
+          : null,
+      'weight': flutterData['weight'] != null
+          ? int.tryParse(flutterData['weight'].toString())
+          : null,
+      'experience_years': flutterData['experience_years'] != null
+          ? int.tryParse(flutterData['experience_years'].toString())
+          : null,
+      'level': flutterData['level']?.toString(),
+      'achievements': flutterData['achievements']?.toString(),
+      'video_url': flutterData['video_url']?.toString(),
+      'bio': flutterData['bio']?.toString(),
     };
   }
 
@@ -333,11 +350,42 @@ class ProfileService {
                   'type': 'number',
                   'required': true,
                 },
+                {
+                  'name': 'handicap_type',
+                  'label': 'Type de handicap',
+                  'type': 'text',
+                  'required': true,
+                  'options': [
+                    'moteur',
+                    'visuel',
+                    'auditif',
+                    'cognitif',
+                    'non_specifie',
+                  ],
+                },
               ],
             },
             {
               'title': 'Informations sportives',
               'fields': [
+                {
+                  'name': 'club',
+                  'label': 'Club actuel',
+                  'type': 'text',
+                  'required': false,
+                },
+                {
+                  'name': 'coach',
+                  'label': 'Entraîneur',
+                  'type': 'text',
+                  'required': false,
+                },
+                {
+                  'name': 'profession',
+                  'label': 'Profession',
+                  'type': 'text',
+                  'required': false,
+                },
                 {
                   'name': 'position',
                   'label': 'Poste',

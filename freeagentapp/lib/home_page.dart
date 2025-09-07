@@ -10,7 +10,6 @@ import 'teams_page.dart';
 import 'dietitians_page.dart';
 import 'lawyers_page.dart';
 import 'handibasket_page.dart';
-import 'subscription_page.dart';
 import 'utils/premium_navigation.dart';
 import 'services/profile_service.dart';
 import 'services/auth_service.dart';
@@ -136,28 +135,6 @@ class _HomePageState extends State<HomePage> {
       context,
       customMessage:
           'Accède à toutes les opportunités et fonctionnalités premium pour booster ta carrière !',
-    );
-  }
-
-  Widget _buildBenefit(String icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Text(
-            icon,
-            style: const TextStyle(fontSize: 16),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            text,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -466,14 +443,14 @@ class _HomeContentState extends State<_HomeContent> {
               children: [
                 _CategoryIcon(
                   icon: Icons.person,
-                  label: 'Players',
+                  label: 'Joueurs',
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const PlayersPage()),
                   ),
                 ),
                 _CategoryIcon(
                   icon: Icons.person_outline,
-                  label: 'Coaches',
+                  label: 'Entraîneurs',
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const CoachesPage()),
                   ),
@@ -494,14 +471,14 @@ class _HomeContentState extends State<_HomeContent> {
                 ),
                 _CategoryIcon(
                   icon: Icons.restaurant,
-                  label: 'Dietitians',
+                  label: 'Diététiciens',
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const DietitiansPage()),
                   ),
                 ),
                 _CategoryIcon(
                   icon: Icons.balance,
-                  label: 'Lawyers',
+                  label: 'Avocats',
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const LawyersPage()),
                   ),
@@ -528,7 +505,7 @@ class _HomeContentState extends State<_HomeContent> {
 
             // Contents
             const Text(
-              'Contents',
+              'Contenus',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -540,7 +517,7 @@ class _HomeContentState extends State<_HomeContent> {
               children: [
                 Expanded(
                   child: _ContentCard(
-                    title: 'COACHS',
+                    title: 'ENTRAÎNEURS',
                     image: 'assets/coach.png',
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const CoachesPage()),
@@ -550,7 +527,7 @@ class _HomeContentState extends State<_HomeContent> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _ContentCard(
-                    title: 'DIETITIANS',
+                    title: 'DIÉTÉTICIENS',
                     image: 'assets/dieat.png',
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const DietitiansPage()),
@@ -564,7 +541,7 @@ class _HomeContentState extends State<_HomeContent> {
               children: [
                 Expanded(
                   child: _ContentCard(
-                    title: 'LAWYERS',
+                    title: 'AVOCATS',
                     image: 'assets/lawyers.png',
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const LawyersPage()),
@@ -574,8 +551,9 @@ class _HomeContentState extends State<_HomeContent> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _ContentCard(
-                    title: 'PLAYER',
-                    image: 'assets/players.png',
+                    title: 'JOUEURS',
+                    image:
+                        'assets/Photos pour le site - Profil joueur joueuse.jpg',
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const PlayersPage()),
                     ),
@@ -588,18 +566,40 @@ class _HomeContentState extends State<_HomeContent> {
               children: [
                 Expanded(
                   child: _ContentCard(
-                    title: 'TEAMS',
-                    image: 'assets/teams.png',
+                    title: 'ÉQUIPES',
+                    image: 'assets/Photos pour le site de basket.png',
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const TeamsPage()),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
+                Expanded(
+                  child: _ContentCard(
+                    title: 'HANDIBASKET',
+                    image: 'assets/Photos pour le site - Handibasket.png',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (_) => const HandibasketPage()),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
                 const Expanded(
                   child: _ContentCard(
                     title: 'HIGHLIGHTS',
                     image: 'assets/highlights.png',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: _ContentCard(
+                    title: 'COMMUNAUTÉ',
+                    image: 'assets/Photos pour le site.png',
                   ),
                 ),
               ],
@@ -958,7 +958,7 @@ class _CarouselWidgetState extends State<CarouselWidget> {
 
   final List<Map<String, dynamic>> _carouselItems = [
     {
-      'image': 'assets/players.png',
+      'image': 'assets/Équipeidéale.png',
       'title': 'Trouve ton équipe idéale',
       'subtitle': 'Connecte-toi avec les meilleurs clubs',
       'color': const Color(0xFF9B5CFF),
@@ -966,11 +966,11 @@ class _CarouselWidgetState extends State<CarouselWidget> {
     {
       'image': 'assets/coach.png',
       'title': 'Développe ton talent',
-      'subtitle': 'Accède aux meilleurs coaches',
+      'subtitle': 'Accède aux meilleurs entraîneurs',
       'color': const Color(0xFFFF6B6B),
     },
     {
-      'image': 'assets/teams.png',
+      'image': 'assets/Photos pour le site de basket.png',
       'title': 'Rejoins la communauté',
       'subtitle': 'Des milliers d\'opportunités t\'attendent',
       'color': const Color(0xFF4ECDC4),
@@ -980,6 +980,12 @@ class _CarouselWidgetState extends State<CarouselWidget> {
       'title': 'Montre ton potentiel',
       'subtitle': 'Partage tes meilleurs moments',
       'color': const Color(0xFFFFE66D),
+    },
+    {
+      'image': 'assets/Photos pour le site - Handibasket.png',
+      'title': 'Handibasket inclusif',
+      'subtitle': 'Découvre les opportunités handibasket',
+      'color': const Color(0xFF2ECC71),
     },
   ];
 
@@ -1154,6 +1160,16 @@ class TeamDetailPage extends StatelessWidget {
       {
         'name': 'Nando De Colo',
         'position': 'Meneur',
+        'image': 'assets/players.png',
+      },
+      {
+        'name': 'Rudy Gobert',
+        'position': 'Pivot',
+        'image': 'assets/players.png',
+      },
+      {
+        'name': 'Nicolas Batum',
+        'position': 'Ailier',
         'image': 'assets/players.png',
       },
     ];

@@ -167,3 +167,4 @@ router.put('/update-profile', verifyToken, async (req, res) => {
 });
 
 module.exports = router;
+

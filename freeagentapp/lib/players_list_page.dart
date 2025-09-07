@@ -35,7 +35,7 @@ class PlayersListPage extends StatelessWidget {
                   profileType: 'player',
                 ),
                 title: Text(player['name'] ?? ''),
-                subtitle: Text(player['email'] ?? ''),
+                subtitle: Text('Joueur'),
               );
             },
           );

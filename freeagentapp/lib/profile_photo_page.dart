@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'dart:typed_data';
 import 'services/profile_photo_service.dart';
 
 class ProfilePhotoPage extends StatefulWidget {
@@ -58,7 +58,8 @@ class _ProfilePhotoPageState extends State<ProfilePhotoPage> {
       );
 
       if (image != null) {
-        await _uploadImage(File(image.path));
+        final imageBytes = await image.readAsBytes();
+        await _uploadImage(imageBytes, image.name);
       }
     } catch (e) {
       print('Erreur lors de la sélection de l\'image: $e');
@@ -78,7 +79,8 @@ class _ProfilePhotoPageState extends State<ProfilePhotoPage> {
       );
 
       if (image != null) {
-        await _uploadImage(File(image.path));
+        final imageBytes = await image.readAsBytes();
+        await _uploadImage(imageBytes, image.name);
       }
     } catch (e) {
       print('Erreur lors de la prise de photo: $e');
@@ -88,15 +90,11 @@ class _ProfilePhotoPageState extends State<ProfilePhotoPage> {
     }
   }
 
-  Future<void> _uploadImage(File imageFile) async {
+  Future<void> _uploadImage(Uint8List imageBytes, String fileName) async {
     try {
       setState(() {
         _isLoading = true;
       });
-
-      // Lire les bytes du fichier
-      final imageBytes = await imageFile.readAsBytes();
-      final fileName = imageFile.path.split('/').last;
 
       final result =
           await _photoService.uploadProfileImage(imageBytes, fileName);

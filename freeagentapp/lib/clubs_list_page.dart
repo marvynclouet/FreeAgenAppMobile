@@ -35,7 +35,7 @@ class ClubsListPage extends StatelessWidget {
                   profileType: 'club',
                 ),
                 title: Text(club['name'] ?? ''),
-                subtitle: Text(club['email'] ?? ''),
+                
               );
             },
           );

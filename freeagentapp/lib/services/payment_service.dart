@@ -109,6 +109,26 @@ class PaymentService {
       return false;
     }
   }
+
+  // Activer le premium gratuit en période de test
+  Future<bool> activateFreePremium() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/payments/activate-free-premium'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['success'] == true;
+      }
+      return false;
+    } catch (e) {
+      print('Erreur lors de l\'activation du premium gratuit: $e');
+      return false;
+    }
+  }
 }
 
 // Classe pour les détails d'une carte de crédit

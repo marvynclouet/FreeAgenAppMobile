@@ -166,13 +166,44 @@ class _ProfilePageState extends State<ProfilePage> {
           } else if (key == 'gender') {
             _controllers[key]?.text =
                 data['gender']?.toString() ?? userData?[key]?.toString() ?? '';
+          } else if (key == 'height') {
+            _controllers[key]?.text = data['height']?.toString() ?? '';
+          } else if (key == 'weight') {
+            _controllers[key]?.text = data['weight']?.toString() ?? '';
+          } else if (key == 'passport_type') {
+            _controllers[key]?.text = data['passport_type']?.toString() ?? '';
+          } else if (key == 'experience_years') {
+            _controllers[key]?.text =
+                data['experience_years']?.toString() ?? '';
+          } else if (key == 'level') {
+            _controllers[key]?.text = data['level']?.toString() ?? '';
+          } else if (key == 'achievements') {
+            _controllers[key]?.text = data['achievements']?.toString() ?? '';
+          } else if (key == 'video_url') {
+            _controllers[key]?.text = data['video_url']?.toString() ?? '';
+          } else if (key == 'bio') {
+            _controllers[key]?.text = data['bio']?.toString() ?? '';
+          } else if (key == 'championship_level') {
+            _controllers[key]?.text =
+                data['championship_level']?.toString() ?? '';
+          } else if (key == 'passport_type') {
+            _controllers[key]?.text = data['passport_type']?.toString() ?? '';
+          } else if (key == 'handicap_type') {
+            _controllers[key]?.text = data['handicap_type']?.toString() ?? '';
+          } else if (key == 'club') {
+            _controllers[key]?.text = data['club']?.toString() ?? '';
+          } else if (key == 'coach') {
+            _controllers[key]?.text = data['coach']?.toString() ?? '';
+          } else if (key == 'profession') {
+            _controllers[key]?.text = data['profession']?.toString() ?? '';
           } else {
             // Pour tous les autres champs, utiliser les données du profil directement
             _controllers[key]?.text = data[key]?.toString() ?? '';
           }
-          
+
           // Debug: afficher la valeur assignée
-          print('DEBUG _initializeControllers: $key = "${_controllers[key]?.text}"');
+          print(
+              'DEBUG _initializeControllers: $key = "${_controllers[key]?.text}"');
         }
       }
     } catch (e) {
@@ -376,6 +407,34 @@ class _ProfilePageState extends State<ProfilePage> {
         value = profileData?['gender']?.toString() ??
             userData?[fieldName]?.toString() ??
             '';
+      } else if (fieldName == 'height') {
+        value = profileData?['height']?.toString() ?? '';
+      } else if (fieldName == 'weight') {
+        value = profileData?['weight']?.toString() ?? '';
+      } else if (fieldName == 'passport_type') {
+        value = profileData?['passport_type']?.toString() ?? '';
+      } else if (fieldName == 'experience_years') {
+        value = profileData?['experience_years']?.toString() ?? '';
+      } else if (fieldName == 'level') {
+        value = profileData?['level']?.toString() ?? '';
+      } else if (fieldName == 'achievements') {
+        value = profileData?['achievements']?.toString() ?? '';
+      } else if (fieldName == 'video_url') {
+        value = profileData?['video_url']?.toString() ?? '';
+      } else if (fieldName == 'bio') {
+        value = profileData?['bio']?.toString() ?? '';
+      } else if (fieldName == 'championship_level') {
+        value = profileData?['championship_level']?.toString() ?? '';
+      } else if (fieldName == 'passport_type') {
+        value = profileData?['passport_type']?.toString() ?? '';
+      } else if (fieldName == 'handicap_type') {
+        value = profileData?['handicap_type']?.toString() ?? '';
+      } else if (fieldName == 'club') {
+        value = profileData?['club']?.toString() ?? '';
+      } else if (fieldName == 'coach') {
+        value = profileData?['coach']?.toString() ?? '';
+      } else if (fieldName == 'profession') {
+        value = profileData?['profession']?.toString() ?? '';
       } else {
         // Pour tous les autres champs, utiliser les données du profil directement
         value = profileData?[fieldName]?.toString() ?? '';
@@ -706,13 +765,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          userData?['email'] ?? '',
-          style: const TextStyle(
-            color: Color(0xFF9B5CFF),
-            fontSize: 16,
-          ),
-        ),
+        // Email supprimé pour respecter la politique de messagerie interne uniquement
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -951,6 +1004,7 @@ class _ProfilePageState extends State<ProfilePage> {
         return {
           'masculin': 'Masculin',
           'feminin': 'Féminin',
+          'non_specifie': 'Non spécifié',
         };
       case 'position':
         return {
@@ -966,6 +1020,7 @@ class _ProfilePageState extends State<ProfilePage> {
           'nationale': 'Nationale',
           'regional': 'Régional',
           'departemental': 'Départemental',
+          'non_specifie': 'Non spécifié',
         };
       case 'passport_type':
         return {
@@ -976,6 +1031,21 @@ class _ProfilePageState extends State<ProfilePage> {
           'amerique': 'Amérique',
           'canada': 'Canada',
           'autres': 'Autres',
+        };
+      case 'level':
+        return {
+          'Débutant': 'Débutant',
+          'Amateur': 'Amateur',
+          'Semi-pro': 'Semi-pro',
+          'Professionnel': 'Professionnel',
+        };
+      case 'handicap_type':
+        return {
+          'moteur': 'Moteur',
+          'visuel': 'Visuel',
+          'auditif': 'Auditif',
+          'cognitif': 'Cognitif',
+          'non_specifie': 'Non spécifié',
         };
       default:
         return {};
