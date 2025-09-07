@@ -128,7 +128,7 @@ class ChooseProfileTypePage extends StatelessWidget {
                     ),
                     const Icon(
                       Icons.arrow_forward_ios,
-                      color: Colors.white54,
+                      color: Colors.white,
                       size: 16,
                     ),
                   ],

@@ -357,7 +357,7 @@ class _HandibasketTeamProfilePageState
             ),
           if (_isEditing)
             IconButton(
-              icon: const Icon(Icons.close),
+              icon: const Icon(Icons.close, color: Colors.white),
               onPressed: () {
                 setState(() {
                   _isEditing = false;
@@ -468,4 +468,3 @@ class _HandibasketTeamProfilePageState
     super.dispose();
   }
 }
-

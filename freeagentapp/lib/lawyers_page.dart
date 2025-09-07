@@ -123,7 +123,7 @@ class _LawyersPageState extends State<LawyersPage> {
           ),
           trailing: const Icon(
             Icons.chevron_right,
-            color: Colors.white70,
+            color: Colors.white,
           ),
           onTap: () => Navigator.push(
             context,

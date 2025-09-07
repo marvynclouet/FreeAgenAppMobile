@@ -476,7 +476,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 ),
               ),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: Colors.white54),
+                icon: const Icon(Icons.more_vert, color: Colors.white),
                 onSelected: (value) {
                   // Actions du menu
                 },

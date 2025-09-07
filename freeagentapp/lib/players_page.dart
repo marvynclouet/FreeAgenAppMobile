@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'services/profile_service.dart';
 import 'services/auth_service.dart';
 import 'messages_page.dart';
@@ -261,8 +262,8 @@ class _PlayersPageState extends State<PlayersPage> {
                 isExpanded: true,
                 dropdownColor: const Color(0xFF18171C),
                 style: const TextStyle(color: Colors.white, fontSize: 14),
-                icon: const Icon(Icons.keyboard_arrow_down,
-                    color: Colors.white70),
+                icon:
+                    const Icon(Icons.keyboard_arrow_down, color: Colors.white),
                 items: items.map((item) {
                   return DropdownMenuItem<String>(
                     value: item['value'],
@@ -519,7 +520,7 @@ class PlayerCard extends StatelessWidget {
               ),
               const Icon(
                 Icons.chevron_right,
-                color: Colors.white70,
+                color: Colors.white,
               ),
             ],
           ),
@@ -754,53 +755,55 @@ class PlayerDetailPage extends StatelessWidget {
             const SizedBox(height: 24),
 
             _buildInfoSection('Informations personnelles', [
-              _buildInfoRow('Âge', '${player['age']} ans'),
-              _buildInfoRow('Genre', _formatGenderForDetail(player['gender'])),
-              _buildInfoRow('Taille', '${player['height']} cm'),
-              _buildInfoRow('Poids', '${player['weight']} kg'),
+              _buildInfoRow(context, 'Âge', '${player['age']} ans'),
               _buildInfoRow(
-                  'Nationalité', player['nationality'] ?? 'Non spécifié'),
-              _buildInfoRow(
-                  'Poste', _formatPositionForDetail(player['position'])),
-              _buildInfoRow('Niveau championnat',
+                  context, 'Genre', _formatGenderForDetail(player['gender'])),
+              _buildInfoRow(context, 'Taille', '${player['height']} cm'),
+              _buildInfoRow(context, 'Poids', '${player['weight']} kg'),
+              _buildInfoRow(context, 'Nationalité',
+                  player['nationality'] ?? 'Non spécifié'),
+              _buildInfoRow(context, 'Poste',
+                  _formatPositionForDetail(player['position'])),
+              _buildInfoRow(context, 'Niveau championnat',
                   _formatChampionshipForDetail(player['championship_level'])),
-              _buildInfoRow('Type de passeport',
+              _buildInfoRow(context, 'Type de passeport',
                   _formatPassportForDetail(player['passport_type'])),
-              _buildInfoRow('Niveau', player['level'] ?? 'Non spécifié'),
               _buildInfoRow(
-                  'Expérience', '${player['experience_years']} années'),
+                  context, 'Niveau', player['level'] ?? 'Non spécifié'),
+              _buildInfoRow(context, 'Expérience',
+                  '${player['experience_years']} années'),
             ]),
             if (player['stats'] != null) ...[
               const SizedBox(height: 24),
               _buildInfoSection('Statistiques', [
-                _buildInfoRow(
-                    'Points par match', '${player['stats']['points'] ?? 0}'),
-                _buildInfoRow(
-                    'Rebonds par match', '${player['stats']['rebounds'] ?? 0}'),
-                _buildInfoRow(
-                    'Passes par match', '${player['stats']['assists'] ?? 0}'),
-                _buildInfoRow('Interceptions par match',
+                _buildInfoRow(context, 'Points par match',
+                    '${player['stats']['points'] ?? 0}'),
+                _buildInfoRow(context, 'Rebonds par match',
+                    '${player['stats']['rebounds'] ?? 0}'),
+                _buildInfoRow(context, 'Passes par match',
+                    '${player['stats']['assists'] ?? 0}'),
+                _buildInfoRow(context, 'Interceptions par match',
                     '${player['stats']['steals'] ?? 0}'),
-                _buildInfoRow(
-                    'Contres par match', '${player['stats']['blocks'] ?? 0}'),
+                _buildInfoRow(context, 'Contres par match',
+                    '${player['stats']['blocks'] ?? 0}'),
               ]),
             ],
             if (player['achievements'] != null) ...[
               const SizedBox(height: 24),
               _buildInfoSection('Palmarès', [
-                _buildInfoRow('Réalisations', player['achievements']),
+                _buildInfoRow(context, 'Réalisations', player['achievements']),
               ]),
             ],
             if (player['bio'] != null) ...[
               const SizedBox(height: 24),
               _buildInfoSection('Biographie', [
-                _buildInfoRow('À propos', player['bio']),
+                _buildInfoRow(context, 'À propos', player['bio']),
               ]),
             ],
             if (player['video_url'] != null) ...[
               const SizedBox(height: 24),
               _buildInfoSection('Vidéo', [
-                _buildInfoRow('Lien vidéo', player['video_url']),
+                _buildInfoRow(context, 'Lien vidéo', player['video_url']),
               ]),
             ],
           ],
@@ -836,7 +839,9 @@ class PlayerDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(BuildContext context, String label, String value) {
+    bool isVideoUrl = label == 'Lien vidéo' && value.isNotEmpty;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -853,16 +858,42 @@ class PlayerDetailPage extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-              ),
-            ),
+            child: isVideoUrl
+                ? GestureDetector(
+                    onTap: () => _launchUrl(context, value),
+                    child: Text(
+                      value,
+                      style: const TextStyle(
+                        color: Colors.blue,
+                        fontSize: 14,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  )
+                : Text(
+                    value,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _launchUrl(BuildContext context, String url) async {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible d\'ouvrir le lien'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

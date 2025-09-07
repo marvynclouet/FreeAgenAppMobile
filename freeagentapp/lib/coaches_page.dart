@@ -136,7 +136,7 @@ class _CoachesPageState extends State<CoachesPage> {
           ),
           trailing: const Icon(
             Icons.chevron_right,
-            color: Colors.white70,
+            color: Colors.white,
           ),
           onTap: () => Navigator.push(
             context,

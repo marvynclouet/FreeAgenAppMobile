@@ -82,7 +82,7 @@ class PremiumCTA extends StatelessWidget {
                 ),
                 Icon(
                   Icons.arrow_forward_ios,
-                  color: Colors.white70,
+                  color: Colors.white,
                   size: isCompact ? 16 : 20,
                 ),
               ],

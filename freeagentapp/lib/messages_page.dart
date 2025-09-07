@@ -317,7 +317,7 @@ class _MessagesPageState extends State<MessagesPage> {
                   ),
                 ),
               )
-            : const Icon(Icons.chevron_right, color: Colors.grey),
+            : const Icon(Icons.chevron_right, color: Colors.white),
         onTap: _isPremium
             ? () {
                 Navigator.push(

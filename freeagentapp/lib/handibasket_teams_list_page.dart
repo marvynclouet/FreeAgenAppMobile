@@ -95,7 +95,7 @@ class _HandibasketTeamsListPageState extends State<HandibasketTeamsListPage> {
           TextField(
             decoration: const InputDecoration(
               hintText: 'Rechercher une équipe...',
-              prefixIcon: Icon(Icons.search),
+              prefixIcon: Icon(Icons.search, color: Colors.white),
               border: OutlineInputBorder(),
             ),
             onChanged: (value) {
@@ -389,4 +389,3 @@ class _HandibasketTeamsListPageState extends State<HandibasketTeamsListPage> {
     );
   }
 }
-

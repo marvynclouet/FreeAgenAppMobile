@@ -128,7 +128,7 @@ class MatchNotification extends StatelessWidget {
                       onTap: onDismiss,
                       child: const Icon(
                         Icons.close,
-                        color: Colors.white38,
+                        color: Colors.white,
                         size: 20,
                       ),
                     ),
@@ -226,7 +226,7 @@ class _MatchNotificationBannerState extends State<MatchNotificationBanner> {
                   },
                   icon: const Icon(
                     Icons.close,
-                    color: Colors.white54,
+                    color: Colors.white,
                   ),
                 ),
               ],

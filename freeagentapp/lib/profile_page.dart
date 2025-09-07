@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'login_page.dart';
 import 'premium_page.dart';
 import 'profile_photo_page.dart';
@@ -474,17 +475,47 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                color: value == 'Non renseigné' ? Colors.white38 : Colors.white,
-                fontSize: 14,
-              ),
-            ),
+            child: fieldName == 'video_url' &&
+                    value.isNotEmpty &&
+                    value != 'Non renseigné'
+                ? GestureDetector(
+                    onTap: () => _launchUrl(context, value),
+                    child: Text(
+                      value,
+                      style: const TextStyle(
+                        color: Colors.blue,
+                        fontSize: 14,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  )
+                : Text(
+                    value,
+                    style: TextStyle(
+                      color: value == 'Non renseigné'
+                          ? Colors.white38
+                          : Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _launchUrl(BuildContext context, String url) async {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible d\'ouvrir le lien'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Widget _buildEditForm() {

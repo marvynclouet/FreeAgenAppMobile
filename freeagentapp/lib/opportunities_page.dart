@@ -183,7 +183,7 @@ class _OpportunitiesPageState extends State<OpportunitiesPage> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.search, color: Colors.white38),
+                      const Icon(Icons.search, color: Colors.white),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
@@ -202,7 +202,7 @@ class _OpportunitiesPageState extends State<OpportunitiesPage> {
                           onTap: () {
                             _searchController.clear();
                           },
-                          child: const Icon(Icons.clear, color: Colors.white38),
+                          child: const Icon(Icons.clear, color: Colors.white),
                         ),
                     ],
                   ),

@@ -165,7 +165,7 @@ class _PremiumPageState extends State<PremiumPage> {
         actions: [
           if (_currentStatus?.isPremium == true)
             IconButton(
-              icon: const Icon(Icons.cancel_outlined),
+              icon: const Icon(Icons.cancel_outlined, color: Colors.white),
               onPressed: _cancelSubscription,
               tooltip: 'Annuler l\'abonnement',
             ),

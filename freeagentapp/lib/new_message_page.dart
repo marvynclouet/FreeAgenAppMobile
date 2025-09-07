@@ -220,7 +220,7 @@ class _NewMessagePageState extends State<NewMessagePage> {
                 decoration: InputDecoration(
                   hintText: 'Rechercher un utilisateur...',
                   hintStyle: TextStyle(color: Colors.grey[400]),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
+                  prefixIcon: Icon(Icons.search, color: Colors.white),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -302,7 +302,7 @@ class _NewMessagePageState extends State<NewMessagePage> {
                             _selectedUser = null;
                           });
                         },
-                        icon: const Icon(Icons.close, color: Colors.grey),
+                        icon: const Icon(Icons.close, color: Colors.white),
                       ),
                   ],
                 ),

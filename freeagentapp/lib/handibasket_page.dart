@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'services/profile_service.dart';
 import 'services/auth_service.dart';
 import 'services/message_service.dart';
@@ -269,8 +270,8 @@ class _HandibasketPageState extends State<HandibasketPage> {
                 isExpanded: true,
                 dropdownColor: const Color(0xFF18171C),
                 style: const TextStyle(color: Colors.white, fontSize: 14),
-                icon: const Icon(Icons.keyboard_arrow_down,
-                    color: Colors.white70),
+                icon:
+                    const Icon(Icons.keyboard_arrow_down, color: Colors.white),
                 items: items.map((item) {
                   return DropdownMenuItem<String>(
                     value: item['value'],
@@ -556,7 +557,7 @@ class HandibasketPlayerCard extends StatelessWidget {
               ),
               const Icon(
                 Icons.chevron_right,
-                color: Colors.white70,
+                color: Colors.white,
               ),
             ],
           ),
@@ -818,33 +819,35 @@ class HandibasketPlayerDetailPage extends StatelessWidget {
             const SizedBox(height: 24),
 
             _buildInfoSection('Informations personnelles', [
+              _buildInfoRow(context, 'Âge',
+                  _calculateAge(player['age'] ?? player['birth_date'])),
               _buildInfoRow(
-                  'Âge', _calculateAge(player['age'] ?? player['birth_date'])),
-              _buildInfoRow('Genre', _formatGenderForDetail(player['gender'])),
-              _buildInfoRow(
-                  'Lieu de résidence', player['residence'] ?? 'Non spécifié'),
-              _buildInfoRow(
-                  'Profession', player['profession'] ?? 'Non spécifiée'),
+                  context, 'Genre', _formatGenderForDetail(player['gender'])),
+              _buildInfoRow(context, 'Lieu de résidence',
+                  player['residence'] ?? 'Non spécifié'),
+              _buildInfoRow(context, 'Profession',
+                  player['profession'] ?? 'Non spécifiée'),
             ]),
 
             const SizedBox(height: 24),
             _buildInfoSection('Informations sportives', [
-              _buildInfoRow(
-                  'Poste', _formatPositionForDetail(player['position'])),
-              _buildInfoRow('Niveau championnat',
+              _buildInfoRow(context, 'Poste',
+                  _formatPositionForDetail(player['position'])),
+              _buildInfoRow(context, 'Niveau championnat',
                   _formatChampionshipForDetail(player['championship_level'])),
-              _buildInfoRow('Classification',
+              _buildInfoRow(context, 'Classification',
                   player['cat'] ?? player['classification'] ?? 'Non spécifiée'),
-              _buildInfoRow('Type de handicap',
+              _buildInfoRow(context, 'Type de handicap',
                   player['handicap_type'] ?? 'Non spécifié'),
-              _buildInfoRow('Club', player['club'] ?? 'Non spécifié'),
-              _buildInfoRow('Entraîneur', player['coach'] ?? 'Non spécifié'),
+              _buildInfoRow(context, 'Club', player['club'] ?? 'Non spécifié'),
+              _buildInfoRow(
+                  context, 'Entraîneur', player['coach'] ?? 'Non spécifié'),
             ]),
 
             if (player['experience_years'] != null) ...[
               const SizedBox(height: 24),
               _buildInfoSection('Expérience', [
-                _buildInfoRow('Années d\'expérience',
+                _buildInfoRow(context, 'Années d\'expérience',
                     '${player['experience_years']} années'),
               ]),
             ],
@@ -852,7 +855,7 @@ class HandibasketPlayerDetailPage extends StatelessWidget {
             if (player['bio'] != null) ...[
               const SizedBox(height: 24),
               _buildInfoSection('À propos', [
-                _buildInfoRow('Biographie', player['bio']),
+                _buildInfoRow(context, 'Biographie', player['bio']),
               ]),
             ],
           ],
@@ -889,7 +892,9 @@ class HandibasketPlayerDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(BuildContext context, String label, String value) {
+    bool isVideoUrl = label == 'Lien vidéo' && value.isNotEmpty;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -906,16 +911,42 @@ class HandibasketPlayerDetailPage extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-              ),
-            ),
+            child: isVideoUrl
+                ? GestureDetector(
+                    onTap: () => _launchUrl(context, value),
+                    child: Text(
+                      value,
+                      style: const TextStyle(
+                        color: Colors.blue,
+                        fontSize: 14,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  )
+                : Text(
+                    value,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _launchUrl(BuildContext context, String url) async {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible d\'ouvrir le lien'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

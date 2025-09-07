@@ -442,6 +442,13 @@ class _HomeContentState extends State<_HomeContent> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _CategoryIcon(
+                  icon: Icons.sports_basketball,
+                  label: 'Clubs',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const TeamsPage()),
+                  ),
+                ),
+                _CategoryIcon(
                   icon: Icons.person,
                   label: 'Joueurs',
                   onTap: () => Navigator.of(context).push(
@@ -456,17 +463,10 @@ class _HomeContentState extends State<_HomeContent> {
                   ),
                 ),
                 _CategoryIcon(
-                  icon: Icons.sports_basketball,
-                  label: 'Clubs',
+                  icon: Icons.video_library,
+                  label: 'Highlights',
                   onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const TeamsPage()),
-                  ),
-                ),
-                _CategoryIcon(
-                  icon: Icons.accessible,
-                  label: 'Handibasket',
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const HandibasketPage()),
+                    MaterialPageRoute(builder: (_) => const ContentsPage()),
                   ),
                 ),
                 _CategoryIcon(
@@ -517,34 +517,10 @@ class _HomeContentState extends State<_HomeContent> {
               children: [
                 Expanded(
                   child: _ContentCard(
-                    title: 'ENTRAÎNEURS',
-                    image: 'assets/coach.png',
+                    title: 'CLUBS',
+                    image: 'assets/Photos pour le site de basket.png',
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const CoachesPage()),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _ContentCard(
-                    title: 'DIÉTÉTICIENS',
-                    image: 'assets/dieat.png',
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const DietitiansPage()),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _ContentCard(
-                    title: 'AVOCATS',
-                    image: 'assets/lawyers.png',
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const LawyersPage()),
+                      MaterialPageRoute(builder: (_) => const TeamsPage()),
                     ),
                   ),
                 ),
@@ -566,21 +542,41 @@ class _HomeContentState extends State<_HomeContent> {
               children: [
                 Expanded(
                   child: _ContentCard(
-                    title: 'ÉQUIPES',
-                    image: 'assets/Photos pour le site de basket.png',
+                    title: 'ENTRAÎNEURS',
+                    image: 'assets/coach.png',
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const TeamsPage()),
+                      MaterialPageRoute(builder: (_) => const CoachesPage()),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: _ContentCard(
+                    title: 'HIGHLIGHTS',
+                    image: 'assets/highlights.png',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _ContentCard(
+                    title: 'DIÉTÉTICIENS',
+                    image: 'assets/dieat.png',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const DietitiansPage()),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _ContentCard(
-                    title: 'HANDIBASKET',
-                    image: 'assets/Photos pour le site - Handibasket.png',
+                    title: 'AVOCATS',
+                    image: 'assets/lawyers.png',
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                          builder: (_) => const HandibasketPage()),
+                      MaterialPageRoute(builder: (_) => const LawyersPage()),
                     ),
                   ),
                 ),
@@ -589,10 +585,14 @@ class _HomeContentState extends State<_HomeContent> {
             const SizedBox(height: 12),
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: _ContentCard(
-                    title: 'HIGHLIGHTS',
-                    image: 'assets/highlights.png',
+                    title: 'HANDIBASKET',
+                    image: 'assets/Photos pour le site - Handibasket.png',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (_) => const HandibasketPage()),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
