@@ -704,8 +704,37 @@ class _ContentCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset(image, fit: BoxFit.cover),
-            Container(color: Colors.black.withOpacity(0.45)),
+            // Image avec meilleur ajustement pour éviter les bordures blanches
+            Positioned.fill(
+              child: Image.asset(
+                image, 
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: const Color(0xFF18171C),
+                    child: const Icon(
+                      Icons.image_not_supported,
+                      color: Colors.white54,
+                      size: 40,
+                    ),
+                  );
+                },
+              ),
+            ),
+            // Overlay pour améliorer la lisibilité du texte
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.2),
+                    Colors.black.withOpacity(0.6),
+                  ],
+                ),
+              ),
+            ),
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12.0),
@@ -719,8 +748,8 @@ class _ContentCard extends StatelessWidget {
                     letterSpacing: 1.1,
                     shadows: [
                       Shadow(
-                        color: Colors.black54,
-                        blurRadius: 4,
+                        color: Colors.black87,
+                        blurRadius: 6,
                         offset: Offset(0, 2),
                       ),
                     ],
