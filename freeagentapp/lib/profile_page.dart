@@ -4,7 +4,6 @@ import 'login_page.dart';
 import 'premium_page.dart';
 import 'profile_photo_page.dart';
 import 'subscription_management_page.dart';
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/profile_service.dart';
 import 'services/auth_service.dart';
@@ -478,16 +477,50 @@ class _ProfilePageState extends State<ProfilePage> {
             child: fieldName == 'video_url' &&
                     value.isNotEmpty &&
                     value != 'Non renseigné'
-                ? GestureDetector(
-                    onTap: () => _launchUrl(context, value),
-                    child: Text(
-                      value,
-                      style: const TextStyle(
-                        color: Colors.blue,
-                        fontSize: 14,
-                        decoration: TextDecoration.underline,
+                ? Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _launchUrl(context, value),
+                          child: Text(
+                            value,
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              fontSize: 14,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        onPressed: () => _launchUrl(context, value),
+                        icon: const Icon(
+                          Icons.play_arrow,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                        label: const Text(
+                          'Voir la vidéo',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF9B5CFF),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 2,
+                        ),
+                      ),
+                    ],
                   )
                 : Text(
                     value,

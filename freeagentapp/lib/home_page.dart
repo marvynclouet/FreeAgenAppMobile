@@ -707,7 +707,7 @@ class _ContentCard extends StatelessWidget {
             // Image avec meilleur ajustement pour éviter les bordures blanches
             Positioned.fill(
               child: Image.asset(
-                image, 
+                image,
                 fit: BoxFit.cover,
                 alignment: Alignment.center,
                 errorBuilder: (context, error, stackTrace) {
