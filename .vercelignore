@@ -1,7 +1,9 @@
-# Ignore everything except what we need for build
+# Ignore everything except what we need for deployment
 *
+!.git/
 !freeagentapp/
-!build.sh
+!freeagentapp/build/
+!freeagentapp/build/web/
 !vercel.json
 !.vercelignore
 !README.md
