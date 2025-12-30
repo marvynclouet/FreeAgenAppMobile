@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const pool = require('../config/db.config');
+const { sendPasswordResetEmail } = require('../services/email.service');
 
 // Route d'inscription
 router.post('/register', async (req, res) => {
@@ -344,15 +345,19 @@ router.post('/forgot-password', async (req, res) => {
       [user.id, resetToken, expiresAt]
     );
 
-    // TODO: Envoyer un email avec le lien de réinitialisation
-    // Pour l'instant, on retourne le token dans la réponse (à retirer en production)
-    // En production, vous devriez envoyer un email avec un lien comme:
-    // https://votre-app.com/reset-password?token=resetToken
+    // Envoyer un email avec le lien de réinitialisation
+    try {
+      await sendPasswordResetEmail(user.email, resetToken, user.name);
+      console.log(`✅ Email de réinitialisation envoyé à ${user.email}`);
+    } catch (emailError) {
+      console.error('Erreur lors de l\'envoi de l\'email:', emailError);
+      // On continue même si l'email échoue, pour ne pas révéler si l'email existe
+      // En production, vous pourriez vouloir logger cette erreur pour investigation
+    }
     
+    // Ne jamais retourner le token dans la réponse pour des raisons de sécurité
     res.json({ 
-      message: 'Si cet email existe, un lien de réinitialisation a été envoyé',
-      // À retirer en production - seulement pour le développement
-      resetToken: resetToken // À supprimer quand l'envoi d'email sera implémenté
+      message: 'Si cet email existe, un lien de réinitialisation a été envoyé'
     });
   } catch (error) {
     console.error('Erreur lors de la demande de réinitialisation:', error);
