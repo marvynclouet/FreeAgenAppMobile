@@ -1,18 +1,13 @@
 {
   "version": 2,
-  "builds": [
+  "buildCommand": "chmod +x build.sh && ./build.sh",
+  "outputDirectory": "freeagentapp/build/web",
+  "installCommand": "echo 'Skipping install - Flutter will handle dependencies'",
+  "framework": null,
+  "rewrites": [
     {
-      "src": "freeagentapp/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build/web"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
