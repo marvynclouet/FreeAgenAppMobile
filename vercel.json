@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "echo 'Build already present in repository'",
+  "buildCommand": "",
   "outputDirectory": "freeagentapp/build/web",
-  "installCommand": "echo 'No installation needed - build is pre-built'",
+  "installCommand": "",
   "framework": null,
   "rewrites": [
     {
