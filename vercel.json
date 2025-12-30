@@ -1,8 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "chmod +x build.sh && ./build.sh",
   "outputDirectory": "freeagentapp/build/web",
-  "installCommand": "echo 'Skipping install - Flutter will handle dependencies'",
   "framework": null,
   "rewrites": [
     {
