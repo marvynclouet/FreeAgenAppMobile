@@ -1,0 +1,8 @@
+# Ignore everything except what we need for build
+*
+!freeagentapp/
+!build.sh
+!vercel.json
+!.vercelignore
+!README.md
+
