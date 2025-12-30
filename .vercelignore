@@ -1,10 +1,10 @@
-# Ignore everything except what we need for deployment
-*
-!.git/
-!freeagentapp/
-!freeagentapp/build/
-!freeagentapp/build/web/
-!vercel.json
-!.vercelignore
-!README.md
+# Ignore backend and other unnecessary files
+backend/
+admin-panel/
+test_app/
+*.md
+*.sh
+.DS_Store
+node_modules/
+.git/
 
