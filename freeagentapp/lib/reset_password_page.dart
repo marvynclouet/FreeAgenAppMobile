@@ -1,50 +1,75 @@
 import 'package:flutter/material.dart';
-import 'choose_profile_type.dart';
-import 'home_page.dart';
-import 'forgot_password_page.dart';
 import 'services/auth_service.dart';
+import 'login_page.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+class ResetPasswordPage extends StatefulWidget {
+  final String? token;
+  
+  const ResetPasswordPage({Key? key, this.token}) : super(key: key);
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<ResetPasswordPage> createState() => _ResetPasswordPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
+  final _tokenController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _authService = AuthService();
-  String email = '';
-  String password = '';
   bool isLoading = false;
   bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   @override
   void initState() {
     super.initState();
+    if (widget.token != null) {
+      _tokenController.text = widget.token!;
+    }
   }
 
-  Future<void> _login() async {
+  @override
+  void dispose() {
+    _tokenController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _resetPassword() async {
     if (_formKey.currentState!.validate()) {
       setState(() => isLoading = true);
       try {
-        await _authService.login(email, password);
+        await _authService.resetPassword(
+          _tokenController.text.trim(),
+          _passwordController.text,
+        );
+        
         if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomePage()),
+        
+        // Afficher un message de succès
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Mot de passe réinitialisé avec succès !'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Rediriger vers la page de connexion
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+          (route) => false,
         );
       } catch (e) {
         if (!mounted) return;
+        setState(() => isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text(e.toString().replaceAll('Exception: ', '')),
             backgroundColor: Colors.red,
           ),
         );
-      } finally {
-        if (mounted) {
-          setState(() => isLoading = false);
-        }
       }
     }
   }
@@ -53,6 +78,14 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF111014),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -67,18 +100,14 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 24),
-                  const Center(
-                    child: CircleAvatar(
-                      radius: 60,
-                      backgroundImage: AssetImage(
-                        'assets/PHOTO-2025-05-22-15-45-26.jpg',
-                      ),
-                      backgroundColor: Colors.transparent,
-                    ),
+                  const Icon(
+                    Icons.lock_outline,
+                    size: 80,
+                    color: Color(0xFF9B5CFF),
                   ),
                   const SizedBox(height: 24),
                   const Text(
-                    'Connexion',
+                    'Réinitialiser le mot de passe',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -86,42 +115,48 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     textAlign: TextAlign.center,
                   ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Entrez le token reçu par email et votre nouveau mot de passe.',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: 32),
                   TextFormField(
+                    controller: _tokenController,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: const Color(0xFF18171C),
-                      hintText: 'Email',
+                      hintText: 'Token de réinitialisation',
                       hintStyle: const TextStyle(color: Colors.white54),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide.none,
                       ),
                       prefixIcon: const Icon(
-                        Icons.email,
+                        Icons.vpn_key,
                         color: Colors.white38,
                       ),
                     ),
-                    keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Veuillez entrer votre email';
-                      }
-                      if (!value.contains('@') || !value.contains('.')) {
-                        return 'Format d\'email invalide';
+                        return 'Veuillez entrer le token';
                       }
                       return null;
                     },
-                    onChanged: (value) => email = value,
                   ),
                   const SizedBox(height: 18),
                   TextFormField(
+                    controller: _passwordController,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: const Color(0xFF18171C),
-                      hintText: 'Mot de passe',
+                      hintText: 'Nouveau mot de passe',
                       hintStyle: const TextStyle(color: Colors.white54),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -143,14 +178,56 @@ class _LoginPageState extends State<LoginPage> {
                     obscureText: !_isPasswordVisible,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Veuillez entrer votre mot de passe';
+                        return 'Veuillez entrer un mot de passe';
                       }
                       if (value.length < 6) {
                         return '6 caractères minimum';
                       }
+                      if (!value.contains(RegExp(r'[A-Z]'))) {
+                        return 'Au moins une majuscule requise';
+                      }
+                      if (!value.contains(RegExp(r'[0-9]'))) {
+                        return 'Au moins un chiffre requis';
+                      }
                       return null;
                     },
-                    onChanged: (value) => password = value,
+                  ),
+                  const SizedBox(height: 18),
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: const Color(0xFF18171C),
+                      hintText: 'Confirmer le mot de passe',
+                      hintStyle: const TextStyle(color: Colors.white54),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                      prefixIcon: const Icon(Icons.lock, color: Colors.white38),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                          color: Colors.white38,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                          });
+                        },
+                      ),
+                    ),
+                    obscureText: !_isConfirmPasswordVisible,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Veuillez confirmer le mot de passe';
+                      }
+                      if (value != _passwordController.text) {
+                        return 'Les mots de passe ne correspondent pas';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 28),
                   SizedBox(
@@ -160,13 +237,13 @@ class _LoginPageState extends State<LoginPage> {
                         backgroundColor: const Color(0xFF9B5CFF),
                         shape: const StadiumBorder(),
                       ),
-                      onPressed: isLoading ? null : _login,
+                      onPressed: isLoading ? null : _resetPassword,
                       child: isLoading
                           ? const CircularProgressIndicator(
                               color: Colors.white,
                             )
                           : const Text(
-                              'Connexion',
+                              'Réinitialiser',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -174,34 +251,11 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 18),
                   TextButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const ForgotPasswordPage(),
-                        ),
-                      );
-                    },
+                    onPressed: () => Navigator.of(context).pop(),
                     child: const Text(
-                      'Mot de passe oublié ?',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const ChooseProfileTypePage(),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'Créer un compte',
+                      'Retour',
                       style: TextStyle(color: Color(0xFF9B5CFF)),
                     ),
                   ),
@@ -214,3 +268,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+

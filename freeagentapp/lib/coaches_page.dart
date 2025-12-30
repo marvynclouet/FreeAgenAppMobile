@@ -30,13 +30,11 @@ class _CoachesPageState extends State<CoachesPage> {
         error = null;
       });
 
-      // Récupérer les coachs pro et basket via l'API
-      final coachsProList = await _profileService.getUsersByType('coach_pro');
-      final coachsBasketList =
-          await _profileService.getUsersByType('coach_basket');
+      // Récupérer les coachs via l'API
+      final coachesList = await _profileService.getCoaches();
 
       setState(() {
-        coaches = [...coachsProList, ...coachsBasketList];
+        coaches = coachesList;
         isLoading = false;
       });
     } catch (e) {
@@ -316,7 +314,35 @@ class CoachDetailPage extends StatelessWidget {
             const SizedBox(height: 24),
 
             _buildInfoSection('Informations générales', [
+              _buildInfoRow('Nom', coach['name'] ?? 'Non spécifié'),
               _buildInfoRow('Type', typeLabel),
+              _buildInfoRow('Email', coach['email'] ?? 'Non spécifié'),
+              if (coach['experience_years'] != null)
+                _buildInfoRow('Expérience', '${coach['experience_years']} ans'),
+              if (coach['level'] != null)
+                _buildInfoRow('Niveau', coach['level']),
+              if (coach['specialization'] != null)
+                _buildInfoRow('Spécialisation', coach['specialization']),
+            ]),
+
+            if (coach['description'] != null &&
+                coach['description'].toString().isNotEmpty)
+              _buildInfoSection('Description', [
+                _buildInfoRow('', coach['description']),
+              ]),
+
+            if (coach['achievements'] != null &&
+                coach['achievements'].toString().isNotEmpty)
+              _buildInfoSection('Palmarès', [
+                _buildInfoRow('', coach['achievements']),
+              ]),
+
+            _buildInfoSection('Contact', [
+              _buildInfoRow('Email', coach['email'] ?? 'Non spécifié'),
+              if (coach['phone'] != null)
+                _buildInfoRow('Téléphone', coach['phone']),
+              if (coach['website'] != null)
+                _buildInfoRow('Site web', coach['website']),
             ]),
           ],
         ),

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const pool = require('../config/db.config');
 
 // Route d'inscription
@@ -297,6 +298,122 @@ router.get('/validate', async (req, res) => {
   } catch (error) {
     console.error('Erreur lors de la validation du token:', error);
     res.status(401).json({ message: 'Token invalide' });
+  }
+});
+
+// Route pour demander une réinitialisation de mot de passe
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email requis' });
+    }
+
+    // Vérifier si l'utilisateur existe
+    const [users] = await pool.query(
+      'SELECT id, email FROM users WHERE email = ?',
+      [email]
+    );
+
+    // Pour des raisons de sécurité, on ne révèle pas si l'email existe ou non
+    if (users.length === 0) {
+      return res.json({ 
+        message: 'Si cet email existe, un lien de réinitialisation a été envoyé' 
+      });
+    }
+
+    const user = users[0];
+
+    // Générer un token unique
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    
+    // Expiration dans 1 heure
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1);
+
+    // Supprimer les anciens tokens non utilisés pour cet utilisateur
+    await pool.query(
+      'DELETE FROM password_reset_tokens WHERE user_id = ? AND used = FALSE',
+      [user.id]
+    );
+
+    // Insérer le nouveau token
+    await pool.query(
+      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
+      [user.id, resetToken, expiresAt]
+    );
+
+    // TODO: Envoyer un email avec le lien de réinitialisation
+    // Pour l'instant, on retourne le token dans la réponse (à retirer en production)
+    // En production, vous devriez envoyer un email avec un lien comme:
+    // https://votre-app.com/reset-password?token=resetToken
+    
+    res.json({ 
+      message: 'Si cet email existe, un lien de réinitialisation a été envoyé',
+      // À retirer en production - seulement pour le développement
+      resetToken: resetToken // À supprimer quand l'envoi d'email sera implémenté
+    });
+  } catch (error) {
+    console.error('Erreur lors de la demande de réinitialisation:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Route pour réinitialiser le mot de passe avec un token
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: 'Token et nouveau mot de passe requis' });
+    }
+
+    // Valider le mot de passe (au moins 1 majuscule et 1 chiffre)
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{6,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({ 
+        message: 'Le mot de passe doit contenir au moins 6 caractères, une majuscule et un chiffre' 
+      });
+    }
+
+    // Vérifier le token
+    const [tokens] = await pool.query(
+      'SELECT * FROM password_reset_tokens WHERE token = ? AND used = FALSE',
+      [token]
+    );
+
+    if (tokens.length === 0) {
+      return res.status(400).json({ message: 'Token invalide ou déjà utilisé' });
+    }
+
+    const resetToken = tokens[0];
+
+    // Vérifier si le token a expiré
+    if (new Date(resetToken.expires_at) < new Date()) {
+      return res.status(400).json({ message: 'Token expiré' });
+    }
+
+    // Hasher le nouveau mot de passe
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Mettre à jour le mot de passe
+    await pool.query(
+      'UPDATE users SET password = ? WHERE id = ?',
+      [hashedPassword, resetToken.user_id]
+    );
+
+    // Marquer le token comme utilisé
+    await pool.query(
+      'UPDATE password_reset_tokens SET used = TRUE WHERE id = ?',
+      [resetToken.id]
+    );
+
+    res.json({ message: 'Mot de passe réinitialisé avec succès' });
+  } catch (error) {
+    console.error('Erreur lors de la réinitialisation:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 });
 

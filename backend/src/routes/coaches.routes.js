@@ -9,23 +9,36 @@ router.get('/', authMiddleware, async (req, res) => {
     const [coaches] = await db.query(`
       SELECT 
         cp.*,
+        u.id as user_id,
         u.name,
         u.email,
+        u.profile_type,
         u.profile_image_url,
-        'coach_pro' as type
+        u.gender,
+        u.nationality,
+        u.created_at,
+        u.is_premium,
+        u.subscription_type
       FROM coach_pro_profiles cp
       JOIN users u ON cp.user_id = u.id
       WHERE u.profile_type = 'coach_pro'
       UNION ALL
       SELECT 
         cb.*,
+        u.id as user_id,
         u.name,
         u.email,
+        u.profile_type,
         u.profile_image_url,
-        'coach_basket' as type
+        u.gender,
+        u.nationality,
+        u.created_at,
+        u.is_premium,
+        u.subscription_type
       FROM coach_basket_profiles cb
       JOIN users u ON cb.user_id = u.id
       WHERE u.profile_type = 'coach_basket'
+      ORDER BY name
     `);
     res.json(coaches);
   } catch (error) {

@@ -17,10 +17,21 @@ const checkProfileType = (allowedTypes) => {
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const [clubs] = await db.query(`
-      SELECT cp.*, u.name as club_name, u.email, u.profile_image_url
+      SELECT 
+        cp.*, 
+        u.name as club_name, 
+        u.email, 
+        u.profile_image_url,
+        u.id as user_id,
+        u.gender,
+        u.nationality,
+        u.created_at,
+        u.is_premium,
+        u.subscription_type
       FROM club_profiles cp
       JOIN users u ON cp.user_id = u.id
       WHERE u.profile_type = 'club'
+      ORDER BY cp.created_at DESC
     `);
     res.json(clubs);
   } catch (error) {
@@ -33,7 +44,17 @@ router.get('/', authMiddleware, async (req, res) => {
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const [clubs] = await db.query(`
-      SELECT cp.*, u.name as club_name, u.email, u.profile_image_url
+      SELECT 
+        cp.*, 
+        u.name as club_name, 
+        u.email, 
+        u.profile_image_url,
+        u.id as user_id,
+        u.gender,
+        u.nationality,
+        u.created_at,
+        u.is_premium,
+        u.subscription_type
       FROM club_profiles cp
       JOIN users u ON cp.user_id = u.id
       WHERE cp.id = ? AND u.profile_type = 'club'

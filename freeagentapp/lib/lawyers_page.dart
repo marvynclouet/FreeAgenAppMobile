@@ -30,7 +30,7 @@ class _LawyersPageState extends State<LawyersPage> {
         error = null;
       });
 
-      final lawyersList = await _profileService.getUsersByType('juriste');
+      final lawyersList = await _profileService.getLawyers();
       setState(() {
         lawyers = lawyersList;
         isLoading = false;
@@ -294,7 +294,36 @@ class LawyerDetailPage extends StatelessWidget {
             const SizedBox(height: 24),
 
             _buildInfoSection('Informations générales', [
+              _buildInfoRow('Nom', lawyer['name'] ?? 'Non spécifié'),
               _buildInfoRow('Spécialité', 'Juriste en droit du sport'),
+              _buildInfoRow('Email', lawyer['email'] ?? 'Non spécifié'),
+              if (lawyer['experience_years'] != null)
+                _buildInfoRow(
+                    'Expérience', '${lawyer['experience_years']} ans'),
+              if (lawyer['level'] != null)
+                _buildInfoRow('Niveau', lawyer['level']),
+              if (lawyer['specialization'] != null)
+                _buildInfoRow('Spécialisation', lawyer['specialization']),
+            ]),
+
+            if (lawyer['description'] != null &&
+                lawyer['description'].toString().isNotEmpty)
+              _buildInfoSection('Description', [
+                _buildInfoRow('', lawyer['description']),
+              ]),
+
+            if (lawyer['achievements'] != null &&
+                lawyer['achievements'].toString().isNotEmpty)
+              _buildInfoSection('Palmarès', [
+                _buildInfoRow('', lawyer['achievements']),
+              ]),
+
+            _buildInfoSection('Contact', [
+              _buildInfoRow('Email', lawyer['email'] ?? 'Non spécifié'),
+              if (lawyer['phone'] != null)
+                _buildInfoRow('Téléphone', lawyer['phone']),
+              if (lawyer['website'] != null)
+                _buildInfoRow('Site web', lawyer['website']),
             ]),
           ],
         ),

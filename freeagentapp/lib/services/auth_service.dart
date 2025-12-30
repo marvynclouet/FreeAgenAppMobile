@@ -51,25 +51,48 @@ class AuthService {
         }),
       );
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+      // Vérifier si la réponse est du HTML (page d'erreur Vercel)
+      final contentType = response.headers['content-type'] ?? '';
+      if (contentType.contains('text/html') || response.body.trim().startsWith('<!doctype') || response.body.trim().startsWith('<!DOCTYPE')) {
+        throw Exception('Le backend est protégé par Vercel. Veuillez contacter le développeur pour résoudre ce problème.');
+      }
 
-        // Vérifier que les données essentielles sont présentes
-        if (data['token'] != null && data['user'] != null) {
-          // Stocker le token et les données utilisateur
-          await _saveToken(data['token']);
-          await _saveUserData(data['user']);
-          return data;
-        } else {
-          throw Exception('Données de connexion incomplètes');
+      if (response.statusCode == 200) {
+        try {
+          final data = json.decode(response.body);
+
+          // Vérifier que les données essentielles sont présentes
+          if (data['token'] != null && data['user'] != null) {
+            // Stocker le token et les données utilisateur
+            await _saveToken(data['token']);
+            await _saveUserData(data['user']);
+            return data;
+          } else {
+            throw Exception('Données de connexion incomplètes');
+          }
+        } catch (e) {
+          if (e.toString().contains('FormatException')) {
+            throw Exception('Le serveur a retourné une réponse invalide. Vérifiez que le backend est accessible.');
+          }
+          rethrow;
         }
       } else {
-        final data = json.decode(response.body);
-        throw Exception(data['message'] ?? 'Erreur de connexion');
+        try {
+          final data = json.decode(response.body);
+          throw Exception(data['message'] ?? 'Erreur de connexion');
+        } catch (e) {
+          if (e.toString().contains('FormatException')) {
+            throw Exception('Erreur de connexion (code ${response.statusCode}). Le serveur n\'a pas retourné de JSON valide.');
+          }
+          throw Exception('Erreur de connexion (code ${response.statusCode})');
+        }
       }
     } catch (e) {
       print('Erreur dans AuthService.login: $e');
-      throw Exception('Erreur de connexion: $e');
+      if (e.toString().contains('FormatException')) {
+        throw Exception('Impossible de se connecter au serveur. Vérifiez votre connexion internet et réessayez.');
+      }
+      throw Exception('Erreur de connexion: ${e.toString().replaceAll('Exception: ', '')}');
     }
   }
 
@@ -231,6 +254,53 @@ class AuthService {
       print('Déconnexion forcée et nettoyage complet effectué');
     } catch (e) {
       print('Erreur lors de la déconnexion forcée: $e');
+    }
+  }
+
+  // Méthode pour demander une réinitialisation de mot de passe
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/forgot-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data;
+      } else {
+        final data = json.decode(response.body);
+        throw Exception(data['message'] ?? 'Erreur lors de la demande de réinitialisation');
+      }
+    } catch (e) {
+      print('Erreur dans AuthService.forgotPassword: $e');
+      throw Exception('Erreur lors de la demande de réinitialisation: $e');
+    }
+  }
+
+  // Méthode pour réinitialiser le mot de passe avec un token
+  Future<void> resetPassword(String token, String newPassword) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/reset-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'token': token,
+          'newPassword': newPassword,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        json.decode(response.body);
+        return;
+      } else {
+        final data = json.decode(response.body);
+        throw Exception(data['message'] ?? 'Erreur lors de la réinitialisation');
+      }
+    } catch (e) {
+      print('Erreur dans AuthService.resetPassword: $e');
+      throw Exception('Erreur lors de la réinitialisation: $e');
     }
   }
 }

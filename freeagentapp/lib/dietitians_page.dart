@@ -30,8 +30,7 @@ class _DietitiansPageState extends State<DietitiansPage> {
         error = null;
       });
 
-      final dietitiansList =
-          await _profileService.getUsersByType('dieteticienne');
+      final dietitiansList = await _profileService.getDietitians();
       setState(() {
         dietitians = dietitiansList;
         isLoading = false;
@@ -295,7 +294,36 @@ class DietitianDetailPage extends StatelessWidget {
             const SizedBox(height: 24),
 
             _buildInfoSection('Informations générales', [
+              _buildInfoRow('Nom', dietitian['name'] ?? 'Non spécifié'),
               _buildInfoRow('Spécialité', 'Diététicien sportif'),
+              _buildInfoRow('Email', dietitian['email'] ?? 'Non spécifié'),
+              if (dietitian['experience_years'] != null)
+                _buildInfoRow(
+                    'Expérience', '${dietitian['experience_years']} ans'),
+              if (dietitian['level'] != null)
+                _buildInfoRow('Niveau', dietitian['level']),
+              if (dietitian['specialization'] != null)
+                _buildInfoRow('Spécialisation', dietitian['specialization']),
+            ]),
+
+            if (dietitian['description'] != null &&
+                dietitian['description'].toString().isNotEmpty)
+              _buildInfoSection('Description', [
+                _buildInfoRow('', dietitian['description']),
+              ]),
+
+            if (dietitian['achievements'] != null &&
+                dietitian['achievements'].toString().isNotEmpty)
+              _buildInfoSection('Palmarès', [
+                _buildInfoRow('', dietitian['achievements']),
+              ]),
+
+            _buildInfoSection('Contact', [
+              _buildInfoRow('Email', dietitian['email'] ?? 'Non spécifié'),
+              if (dietitian['phone'] != null)
+                _buildInfoRow('Téléphone', dietitian['phone']),
+              if (dietitian['website'] != null)
+                _buildInfoRow('Site web', dietitian['website']),
             ]),
           ],
         ),

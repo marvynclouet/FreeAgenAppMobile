@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'services/profile_service.dart';
 import 'widgets/user_avatar.dart';
+import 'teams_page.dart';
 
 class ClubsListPage extends StatelessWidget {
   const ClubsListPage({Key? key}) : super(key: key);
@@ -34,8 +35,27 @@ class ClubsListPage extends StatelessWidget {
                   radius: 24,
                   profileType: 'club',
                 ),
-                title: Text(club['name'] ?? ''),
-                
+                title: Text(
+                  club['name'] ?? 'Club',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(
+                  'Club de basketball',
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: Colors.white,
+                ),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TeamDetailPage(team: club),
+                  ),
+                ),
               );
             },
           );

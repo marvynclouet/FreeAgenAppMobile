@@ -294,8 +294,37 @@ class TeamDetailPage extends StatelessWidget {
             const SizedBox(height: 24),
 
             _buildInfoSection('Informations générales', [
+              _buildInfoRow('Nom du club',
+                  team['club_name'] ?? team['name'] ?? 'Non spécifié'),
+              _buildInfoRow('Ville', team['city'] ?? 'Non spécifiée'),
+              _buildInfoRow(
+                  'Localisation', team['location'] ?? 'Non spécifiée'),
+              _buildInfoRow('Niveau', team['level'] ?? 'Non spécifié'),
               _buildInfoRow('Type', 'Club de basketball'),
             ]),
+
+            if (team['description'] != null &&
+                team['description'].toString().isNotEmpty)
+              _buildInfoSection('Description', [
+                _buildInfoRow('', team['description']),
+              ]),
+
+            _buildInfoSection('Contact', [
+              _buildInfoRow('Téléphone', team['phone'] ?? 'Non spécifié'),
+              _buildInfoRow('Email', team['email'] ?? 'Non spécifié'),
+              if (team['website'] != null &&
+                  team['website'].toString().isNotEmpty)
+                _buildInfoRow('Site web', team['website']),
+              if (team['address'] != null &&
+                  team['address'].toString().isNotEmpty)
+                _buildInfoRow('Adresse', team['address']),
+            ]),
+
+            if (team['social_media'] != null &&
+                team['social_media'].toString().isNotEmpty)
+              _buildInfoSection('Réseaux sociaux', [
+                _buildInfoRow('', team['social_media']),
+              ]),
           ],
         ),
       ),

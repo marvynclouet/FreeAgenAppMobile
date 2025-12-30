@@ -8,7 +8,7 @@ class ApiConfig {
       // URL Railway en production
       return 'https://freeagenappmobile-production.up.railway.app/api';
     } else {
-      // URL locale en développement
+      // URL Railway en développement
       return 'https://freeagenappmobile-production.up.railway.app/api';
     }
   }
