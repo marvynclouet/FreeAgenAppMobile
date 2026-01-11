@@ -41,3 +41,4 @@ Framework Preset: Other (ou vide)
 
 Le fichier `vercel.json` à la racine devrait déjà contenir ces paramètres. Vercel devrait les utiliser automatiquement, mais vous pouvez aussi les définir manuellement dans le dashboard.
 
+

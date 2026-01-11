@@ -877,54 +877,56 @@ class ProfileService {
   }
 
   // Récupérer les diététiciennes
-  Future<List<Map<String, dynamic>>> getDietitians() async {
-    final token = await _authService.getToken();
+  // TODO: Réactiver plus tard
+  // Future<List<Map<String, dynamic>>> getDietitians() async {
+  //   final token = await _authService.getToken();
 
-    if (token == null) {
-      throw Exception('Non authentifié');
-    }
+  //   if (token == null) {
+  //     throw Exception('Non authentifié');
+  //   }
 
-    final response = await http.get(
-      Uri.parse('$baseUrl/dietitians'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
+  //   final response = await http.get(
+  //     Uri.parse('$baseUrl/dietitians'),
+  //     headers: {
+  //       'Authorization': 'Bearer $token',
+  //       'Content-Type': 'application/json',
+  //     },
+  //   );
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      return data.cast<Map<String, dynamic>>();
-    } else {
-      throw Exception(
-          'Erreur lors de la récupération des diététiciennes: ${response.body}');
-    }
-  }
+  //   if (response.statusCode == 200) {
+  //     final List<dynamic> data = json.decode(response.body);
+  //     return data.cast<Map<String, dynamic>>();
+  //   } else {
+  //     throw Exception(
+  //         'Erreur lors de la récupération des diététiciennes: ${response.body}');
+  //   }
+  // }
 
-  // Récupérer les avocats/juristes
-  Future<List<Map<String, dynamic>>> getLawyers() async {
-    final token = await _authService.getToken();
+  // TODO: Réactiver plus tard
+  // // Récupérer les avocats/juristes
+  // Future<List<Map<String, dynamic>>> getLawyers() async {
+  //   final token = await _authService.getToken();
 
-    if (token == null) {
-      throw Exception('Non authentifié');
-    }
+  //   if (token == null) {
+  //     throw Exception('Non authentifié');
+  //   }
 
-    final response = await http.get(
-      Uri.parse('$baseUrl/lawyers'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
+  //   final response = await http.get(
+  //     Uri.parse('$baseUrl/lawyers'),
+  //     headers: {
+  //       'Authorization': 'Bearer $token',
+  //       'Content-Type': 'application/json',
+  //     },
+  //   );
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      return data.cast<Map<String, dynamic>>();
-    } else {
-      throw Exception(
-          'Erreur lors de la récupération des avocats: ${response.body}');
-    }
-  }
+  //   if (response.statusCode == 200) {
+  //     final List<dynamic> data = json.decode(response.body);
+  //     return data.cast<Map<String, dynamic>>();
+  //   } else {
+  //     throw Exception(
+  //         'Erreur lors de la récupération des avocats: ${response.body}');
+  //   }
+  // }
 
   // Récupérer les clubs
   Future<List<Map<String, dynamic>>> getClubs() async {

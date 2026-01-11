@@ -12,3 +12,4 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
     INDEX idx_expires_at (expires_at)
 );
 
+

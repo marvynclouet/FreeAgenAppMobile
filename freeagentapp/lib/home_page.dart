@@ -7,8 +7,6 @@ import 'matching_page.dart';
 import 'players_page.dart';
 import 'coaches_page.dart';
 import 'teams_page.dart';
-import 'dietitians_page.dart';
-import 'lawyers_page.dart';
 import 'handibasket_page.dart';
 import 'utils/premium_navigation.dart';
 import 'services/profile_service.dart';
@@ -469,20 +467,6 @@ class _HomeContentState extends State<_HomeContent> {
                     MaterialPageRoute(builder: (_) => const ContentsPage()),
                   ),
                 ),
-                _CategoryIcon(
-                  icon: Icons.restaurant,
-                  label: 'Diététiciens',
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const DietitiansPage()),
-                  ),
-                ),
-                _CategoryIcon(
-                  icon: Icons.balance,
-                  label: 'Avocats',
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const LawyersPage()),
-                  ),
-                ),
               ],
             ),
             const SizedBox(height: 32),
@@ -554,30 +538,6 @@ class _HomeContentState extends State<_HomeContent> {
                   child: _ContentCard(
                     title: 'HIGHLIGHTS',
                     image: 'assets/highlights.png',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _ContentCard(
-                    title: 'DIÉTÉTICIENS',
-                    image: 'assets/dieat.png',
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const DietitiansPage()),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _ContentCard(
-                    title: 'AVOCATS',
-                    image: 'assets/lawyers.png',
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const LawyersPage()),
-                    ),
                   ),
                 ),
               ],

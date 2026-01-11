@@ -2,6 +2,19 @@ const nodemailer = require('nodemailer');
 
 // Configuration du transporteur email
 const createTransporter = () => {
+  // Si SendGrid est configuré, utiliser SendGrid
+  if (process.env.EMAIL_SERVICE === 'sendgrid' && process.env.SENDGRID_API_KEY) {
+    return nodemailer.createTransport({
+      host: 'smtp.sendgrid.net',
+      port: 587,
+      secure: false,
+      auth: {
+        user: 'apikey',
+        pass: process.env.SENDGRID_API_KEY,
+      },
+    });
+  }
+
   // Si SMTP est configuré, utiliser SMTP
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
     return nodemailer.createTransport({
@@ -199,4 +212,5 @@ module.exports = {
   sendPasswordResetEmail,
   createTransporter,
 };
+
 

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'clubs_list_page.dart';
 import 'players_list_page.dart';
 import 'coaches_page.dart';
-import 'lawyers_page.dart';
-import 'dietitians_page.dart';
 
 class ContentSectionsPage extends StatelessWidget {
   const ContentSectionsPage({Key? key}) : super(key: key);
@@ -90,28 +88,6 @@ class ContentSectionsPage extends StatelessWidget {
                   color: Colors.purple,
                   onTap: () => _showComingSoon(context),
                 ),
-                _buildSectionCard(
-                  context,
-                  title: 'Juridique',
-                  subtitle: 'Conseils juridiques',
-                  icon: Icons.gavel,
-                  color: Colors.red,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LawyersPage()),
-                  ),
-                ),
-                _buildSectionCard(
-                  context,
-                  title: 'Diététique',
-                  subtitle: 'Nutrition sportive',
-                  icon: Icons.restaurant,
-                  color: Colors.teal,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const DietitiansPage()),
-                  ),
-                ),
               ],
             ),
             
@@ -143,10 +119,7 @@ class ContentSectionsPage extends StatelessWidget {
               title: 'Conseils nutrition',
               subtitle: 'Optimisez vos performances',
               imageUrl: 'assets/dieat.png',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const DietitiansPage()),
-              ),
+              onTap: () => _showComingSoon(context),
             ),
           ],
         ),

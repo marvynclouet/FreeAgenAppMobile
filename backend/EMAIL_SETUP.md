@@ -124,3 +124,4 @@ Après avoir configuré les variables d'environnement dans Railway :
 - Si l'envoi échoue, l'erreur est loggée mais ne bloque pas la réponse
 - Pour la production, utilisez un service professionnel (SendGrid, Mailgun, etc.)
 
+

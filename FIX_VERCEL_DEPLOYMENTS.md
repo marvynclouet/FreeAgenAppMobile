@@ -83,3 +83,4 @@ Après correction, vérifiez :
 - Backend Railway : https://freeagenappmobile-production.up.railway.app/api
 - Frontend Vercel : Votre projet "freeagentapp" sur Vercel
 
+

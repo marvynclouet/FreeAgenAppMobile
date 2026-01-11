@@ -35,18 +35,6 @@ class ChooseProfileTypePage extends StatelessWidget {
         'description': 'Spécialisez-vous dans le coaching de basketball',
       },
       {
-        'id': 'juriste',
-        'label': 'Juriste / Consultant en droit des affaires',
-        'image': 'assets/lawyers.png',
-        'description': 'Offrez vos services juridiques aux acteurs du sport',
-      },
-      {
-        'id': 'dieteticienne',
-        'label': 'Diététicienne Sportive',
-        'image': 'assets/dieat.png',
-        'description': 'Proposez vos services de nutrition sportive',
-      },
-      {
         'id': 'club',
         'label': 'Club de Basketball',
         'image': 'assets/teams.png',
